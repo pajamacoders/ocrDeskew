@@ -7,6 +7,6 @@ def build_dataloader(type, batch_size, train, valid):
     train_dataset = ocrFactory[type](**train)
     valid_dataset = ocrFactory[type](**valid)
     sampler = RandomSampler(train_dataset)
-    train_loader = DataLoader(train_dataset, shuffle=(sampler is None), sampler=sampler)
-    valid_loader = DataLoader(valid_dataset, shuffle=False, sampler=sampler)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=(sampler is None), sampler=sampler)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
     return train_loader, valid_loader

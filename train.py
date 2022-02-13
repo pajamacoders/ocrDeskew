@@ -1,10 +1,10 @@
-
 import cv2
 import os
 import torch
 import logging
 import argparse
 import json
+from modules.dataset.ocrDataset import OCRDataset
 
 from modules.utils import build_transformer, MLLogger
 from modules.dataset import build_dataloader
@@ -54,26 +54,29 @@ if __name__ == "__main__":
         if args.run_name:
             cfg['mllogger_cfg']['run_name']=args.run_name
     
-    tr = build_transformer()
-    train_loader, valid_loader = build_dataloader(**cfg['dataset_cfg'])
+    tr = build_transformer(cfg['transform_cfg'])
+    dataset = OCRDataset(**cfg['dataset_cfg']['train'])
+    dataset.set_transformer(tr)
+    dataset.compute_average()
+    print(dataset)
+    # train_loader, valid_loader = build_dataloader(**cfg['dataset_cfg'])
 
-    logger.info('create model')
-    model = torch.hub.load('pytorch/vision:v0.10.0', cfg['model_cfg']['type'])
+    # logger.info('create model')
+    # model = torch.hub.load('pytorch/vision:v0.10.0', cfg['model_cfg']['type'])
 
-    logger.info('create loss function')
-    fn_loss = torch.nn.MSELoss()
+    # logger.info('create loss function')
+    # fn_loss = torch.nn.MSELoss()
 
-    logger.info('create optimizer')
-    opt=torch.optim.Adam(model.parameters(), **cfg['optimizer_cfg']['args'])
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt,**cfg['lr_scheduler_cfg']['args'])
+    # logger.info('create optimizer')
+    # opt=torch.optim.Adam(model.parameters(), **cfg['optimizer_cfg']['args'])
+    # lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt,**cfg['lr_scheduler_cfg']['args'])
 
-    max_epoch = cfg['train_cfg']['max_epoch']
-    valid_ecpoh = cfg['train_cfg']['validation_every_n_epoch']
-    logger.info(f'max_epoch :{max_epoch}')
-    logger.info('set mlflow tracking')
-    mltracker = MLLogger(cfg, logger)
-    for step in range(max_epoch):
-        train(model, train_loader, fn_loss, opt)
-        if (step+1)%valid_ecpoh==0:
-            valid(model, valid_loader, fn_loss)
-    
+    # max_epoch = cfg['train_cfg']['max_epoch']
+    # valid_ecpoh = cfg['train_cfg']['validation_every_n_epoch']
+    # logger.info(f'max_epoch :{max_epoch}')
+    # logger.info('set mlflow tracking')
+    # mltracker = MLLogger(cfg, logger)
+    # for step in range(max_epoch):
+    #     train(model, train_loader, fn_loss, opt)
+    #     if (step+1)%valid_ecpoh==0:
+    #         valid(model, valid_loader, fn_loss)

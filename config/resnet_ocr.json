@@ -1,5 +1,10 @@
 {
     "train_cfg":{"max_epoch":300, "validation_every_n_epoch":5},
+    "transform_cfg":{
+        "Resize":{"scale":4},
+       
+        "RandomRotation":{"degree":30}
+    },
     "dataset_cfg":{
         "type":"OCRDataset",
         "batch_size":4,
