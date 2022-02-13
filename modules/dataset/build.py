@@ -3,7 +3,7 @@ from .ocrDataset import OCRDataset
 
 ocrFactory = {'OCRDataset':OCRDataset}
 
-def build_dataloader(type, train, valid):
+def build_dataloader(type, batch_size, train, valid):
     train_dataset = ocrFactory[type](**train)
     valid_dataset = ocrFactory[type](**valid)
     sampler = RandomSampler(train_dataset)

@@ -12,6 +12,8 @@ class OCRDataset(Dataset):
         self.img_pathes = glob.glob(dataroot, recursive=True)
         self.length = len(self.img_pathes)
        
+    def set_transformer(self, tr):
+        self.transformer=tr
 
     def __len__(self):
         return self.length

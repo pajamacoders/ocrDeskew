@@ -1,0 +1,38 @@
+{
+    "train_cfg":{"max_epoch":300, "validation_every_n_epoch":5},
+    "dataset_cfg":{
+        "type":"OCRDataset",
+        "batch_size":4,
+        "train":{
+            "dataroot":"/data/**/*.jpg"
+        },
+        "valid":{
+            "dataroot":"/data/**/*.jpg"
+        }
+    },
+    "model_cfg":{
+        "type":"resnet18",
+        "args":""
+    },
+    "optimizer_cfg":{
+        "type":"Adam",
+        "args":{
+            "lr":0.001
+            }
+        },
+    "lr_scheduler_cfg":{
+        "type":"CosineAnnealingLR",
+        "args":{
+        "T_max":300,
+        "eta_min":1e-6,
+        "last_epoch":-1
+        }
+    },
+    "loss_cfg":{
+        "type":"MSELoss"
+    },
+    "mllogger_cfg":
+    {"exp_name":"ocr_deskew",
+        "run_name":"resnetTest"
+    }
+}

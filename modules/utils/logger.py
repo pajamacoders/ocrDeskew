@@ -3,17 +3,20 @@ import mlflow
 class MLLogger:
     def __init__(self, config, logger):
         self.logger=logger
-        
-        experiment = mlflow.get_experiment_by_name('ocr_deskew')
+        self.cfg = config['mllogger_cfg']
+        exp_name = self.cfg['exp_name']
+        run_name = self.cfg['run_name']
+        experiment = mlflow.get_experiment_by_name(exp_name)
         if not experiment:
-            self.logger.info(f'No such experiment, Create experiment \'ocr_deskew\' ')
+            self.logger.info(f'No such experiment, Create experiment {exp_name} ')
             experiment_id = mlflow.create_experiment('ocr_deskew')
             experiment = mlflow.get_experiment(experiment_id)
-        
-        run_name = config['run_name']
         self.run = mlflow.start_run(run_name = run_name, experiment_id=experiment.experiment_id)
         self.logger.info('start run')
+        for k,v in config.items():
+            self.log_param(key=k, value=v)
         mlflow.set_tag("release.version", "0.1.0")
+        
     def __del__(self):
         mlflow.end_run()
 
