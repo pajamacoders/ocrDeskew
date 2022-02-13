@@ -11,6 +11,8 @@ from modules.dataset import build_dataloader
 
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler()
+logger.addHandler(stream_handler)
 
 def visualizer(path, img, ):
     img = data['img'].data.numpy().copy().squeeze()
@@ -42,6 +44,8 @@ def parse_args():
     parser.add_argument("--run_name", help="run name for mlflow tracking", type=str)
     args = parser.parse_args()
     return args
+
+
 if __name__ == "__main__":
     args = parse_args()
     with open(args.config, 'r') as f:
@@ -52,8 +56,6 @@ if __name__ == "__main__":
     
     tr = build_transformer()
     train_loader, valid_loader = build_dataloader(**cfg['dataset_cfg'])
-
-    
 
     logger.info('create model')
     model = torch.hub.load('pytorch/vision:v0.10.0', cfg['model_cfg']['type'])
