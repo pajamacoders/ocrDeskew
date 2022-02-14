@@ -39,20 +39,19 @@ class MLLogger:
     def log_model(self, jit_model, name):
         mlflow.pytorch.log_model(pytorch_mode=jit_model, artifact_path = f'model/{name}')
 
-    def log_state_dict(self, model, optimizer, scheduler, loss, epoch, name, isbest=False):
+    def log_state_dict(self, epoch, model, optimizer=None, scheduler=None, isbest=False):
         if isbest:
             chkp_name=f'best_model.chkp'
         elif epoch in [100,200,300]:
-            chkp_name=f'{epoch}_{name}.chkp'
+            chkp_name=f'{epoch}_epoch_chkpoint.chkp'
         else:
             chkp_name='latest_model.chkp'
 
         state_dict = {
             "model": model.state_dict(),
-            "optimizer": optimizer.state_dict(),
-            "scheduler": scheduler.state_dict(),
-            "epoch": epoch,
-            "loss": loss,
+            "optimizer": optimizer.state_dict() if optimizer is not None else None,
+            "scheduler": scheduler.state_dict() if scheduler is not None else None,
+            "epoch": epoch
         }     
 
         mlflow.pytorch.log_state_dict(state_dict=state_dict, artifact_path=f'state_dicts/{chkp_name}')

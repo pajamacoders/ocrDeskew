@@ -2,12 +2,13 @@
     "train_cfg":{"max_epoch":300, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-       
-        "RandomRotation":{"degree":30}
+        "RandomRotation":{"degree":30},
+        "Normalize":{"mean":0.0, "std":255.0},
+        "Shaper":{}
     },
     "dataset_cfg":{
         "type":"OCRDataset",
-        "batch_size":4,
+        "batch_size":128,
         "train":{
             "dataroot":"/data/**/*.jpg"
         },
@@ -16,8 +17,8 @@
         }
     },
     "model_cfg":{
-        "type":"resnet18",
-        "args":""
+        "type":"DeskewNet",
+        "args":{}
     },
     "optimizer_cfg":{
         "type":"Adam",
@@ -38,6 +39,7 @@
     },
     "mllogger_cfg":
     {"exp_name":"ocr_deskew",
-        "run_name":"resnetTest"
+        "run_name":"resnetTest",
+        "user_id": "pajamacoder"
     }
 }

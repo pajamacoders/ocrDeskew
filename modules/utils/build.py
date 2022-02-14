@@ -1,10 +1,10 @@
 from torchvision import transforms
-from .transform import RandomRotation, Normalize, ToTensor,RandomCrop, Resize
+from .transform import RandomRotation, Normalize, RandomCrop, Resize, Shaper
 transfactory={'Resize':Resize,
 'RandomCrop':RandomCrop,
 'RandomRotation':RandomRotation,
 'Normalize':Normalize,
-'ToTensor':ToTensor
+'Shaper':Shaper
 }
 
 def build_transformer(cfg):

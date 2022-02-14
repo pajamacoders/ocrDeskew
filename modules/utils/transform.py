@@ -76,14 +76,18 @@ class Normalize(object):
     def __call__(self, inp):
         img = inp['img']
         inp['img']= (img-self.mean)/self.std
+        inp['mean']=self.mean
+        inp['std']=self.std
         return inp
 
 
-class ToTensor(object):
-    def __init__(self):
-        pass
-
+class Shaper(object):
     def __call__(self, inp):
-        pass
+        img = inp['img']
+        if len(img.shape) <3:
+            img=np.expand_dims(img, -1)
+        inp['img'] = img.transpose(2,0,1)
+        return inp
+
 
         
