@@ -22,14 +22,17 @@ class OCRDataset(Dataset):
     
     def __getitem__(self, index: uint64):
         img = cv2.imread(self.img_pathes[index])
+
         # transform
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
         if self.inverse_color:
             img = 255-img # inverse image to apply dilate
         res_dict = {'img':img, 'imgpath':self.img_pathes[index]}
+      
         if self.transformer:
             res_dict = self.transformer(res_dict)
-        #cv2.imwrite('vis/'+os.path.basename(res_dict['imgpath']), res_dict['img'])
+      
         return res_dict
 
     def compute_average(self):
@@ -37,7 +40,7 @@ class OCRDataset(Dataset):
         for i in range(self.__len__()):
             data = self.__getitem__(i)
             img = data['img'] 
-            #cv2.imwrite(f'vis/{img.mean().astype(int)}_'+os.path.basename(data['imgpath']), img)
+            cv2.imwrite(f'vis/{img.mean().astype(int)}_'+os.path.basename(data['imgpath']), img)
             avg+=img
             if (i+1)%100==0:
                 print(f'{i} image processed.')

@@ -102,14 +102,10 @@ if __name__ == "__main__":
             cfg['mllogger_cfg']['run_name']=args.run_name
     
     tr = build_transformer(cfg['transform_cfg'])
-    # dataset = OCRDataset(**cfg['dataset_cfg']['train'])
-    # dataset.set_transformer(tr)
-    # dataset.compute_average()
-    # print(dataset)
     train_loader, valid_loader = build_dataloader(**cfg['dataset_cfg'], augment_fn=tr)
 
     logger.info('create model')
-    model = build_model(**cfg['model_cfg'])#torch.hub.load('pytorch/vision:v0.10.0', cfg['model_cfg']['type'])
+    model = build_model(**cfg['model_cfg'])
     model.cuda()
     logger.info('create loss function')
     fn_loss = torch.nn.MSELoss()

@@ -14,10 +14,11 @@ class Resize(object):
         inp['org_height']=h
         inp['org_width']=w
         k = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+        img = cv2.dilate(img, k)
         for i in range(self.iter):
             h, w = h//2, w//2
-            img = cv2.dilate(img, k)
             img=cv2.resize(img, (w, h), interpolation=cv2.INTER_CUBIC)
+            h, w = img.shape
         inp['img']=img=cv2.resize(img, (512, 512), interpolation=cv2.INTER_CUBIC)
         return inp
 
