@@ -1,8 +1,8 @@
 {
-    "train_cfg":{"max_epoch":300, "validation_every_n_epoch":5},
+    "train_cfg":{"max_epoch":1000, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-        "RandomRotation":{"degree":30},
+        "RandomRotation":{"degree":45},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
@@ -23,14 +23,14 @@
     "optimizer_cfg":{
         "type":"Adam",
         "args":{
-            "lr":0.001
+            "lr":0.0001
             }
         },
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingLR",
         "args":{
-        "T_max":300,
-        "eta_min":1e-6,
+        "T_max":1000,
+        "eta_min":1e-7,
         "last_epoch":-1
         }
     },

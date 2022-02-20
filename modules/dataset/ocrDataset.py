@@ -40,10 +40,10 @@ class OCRDataset(Dataset):
         for i in range(self.__len__()):
             data = self.__getitem__(i)
             img = data['img'] 
-            cv2.imwrite(f'vis/{img.mean().astype(int)}_'+os.path.basename(data['imgpath']), img)
-            avg+=img
-            if (i+1)%100==0:
-                print(f'{i} image processed.')
+            cv2.imwrite(f'vis/'+os.path.basename(data['imgpath']), img)
+            # avg+=img
+            # if (i+1)%100==0:
+            #     print(f'{i} image processed.')
         print(avg.mean())
         print(avg.std())
 

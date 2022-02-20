@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 
@@ -41,6 +42,7 @@ class DeskewNet(nn.Module):
         out = self.backbone(x)
         out = self.avgpool(out)
         out = self.fc(out.squeeze())
+        out = torch.rad2deg(out)
         return out
 
     def __init_weight(self):
@@ -51,7 +53,18 @@ class DeskewNet(nn.Module):
                 pass
 
     def load_weight(self, pretrained):
-        pass
+        if os.path.exists(pretrained):
+            pre_state_dict = torch.load(pretrained)['model']
+            state_dict = self.state_dict()
+            total_params = len(state_dict.keys())
+            hit_cnt = 0
+            for k, v in pre_state_dict.items():
+                if k in state_dict.keys():
+                    state_dict[k]=v
+                    hit_cnt+=1
+            print(f'hit count : {hit_cnt}/{total_params} prameter loaded!') 
+            self.load_state_dict(state_dict)
 
+                    
     def weight_init_xavier_uniform(self, sub):
         print(sub)

@@ -28,7 +28,7 @@ class MLLogger:
 
     def log_image(self, img, name):
         # numpy image numby uint8 dtype
-        mlflow.log_image(img, artifact_file=f'train/{name}')
+        mlflow.log_image(img, artifact_file=f'test/{name}')
 
     def load_state_dict(self, path):
         pass
