@@ -8,7 +8,8 @@
     },
     "dataset_cfg":{
         "type":"OCRDataset",
-        "batch_size":128,
+        "train_batch":128,
+        "valid_batch":1,
         "train":{
             "dataroot":"/data/**/*.jpg"
         },
