@@ -21,13 +21,19 @@ class DeskewNetV2(nn.Module):
         super(DeskewNetV2, self).__init__()
         k=3
         self.backbone = nn.Sequential(
-            ConvBnRelu(1,8,k,padding=k//2, stride=2),#256x256
-            ConvBnRelu(8,16,k,padding=k//2, stride=2),#128x128
-            ConvBnRelu(16,32,5,padding=5//2,stride=2),#64x64
-            ConvBnRelu(32,64,5,padding=5//2,stride=2),#32x32
-            ConvBnRelu(64,128,5,padding=5//2,stride=2),#16x16
-        )
+                ConvBnRelu(1,8,k,padding=k//2),
+                nn.AvgPool2d(2,2), #256x256
+                ConvBnRelu(8,16,k,padding=k//2),
+                nn.AvgPool2d(2,2), #128x128
+                ConvBnRelu(16,32,5,padding=5//2),
+                nn.AvgPool2d(2,2), #64x64
+                ConvBnRelu(32,64,5,padding=5//2),
+                nn.AvgPool2d(2,2), #32x32
+                ConvBnRelu(64,128,5,padding=5//2),
+                nn.AvgPool2d(2,2), #16x16
+            )
         self.avgpool = nn.AvgPool2d((16,16))
+        self.softmax = nn.Softmax(1)
         self.fc = nn.Sequential(nn.Linear(32768,128),
             nn.BatchNorm1d(128),
             nn.ReLU(True),
@@ -38,11 +44,11 @@ class DeskewNetV2(nn.Module):
 
     def forward(self, x):
         out = self.backbone(x)
-        factor = self.avgpool(out).softmax(1)
-        out*=factor
-        bs,c,h,w = out.shape
-        out=out.reshape(bs,-1)
-        out = self.fc(out.squeeze())
+        factor = self.softmax(self.avgpool(out))
+        tmp=out*factor
+        bs,c,h,w = tmp.shape
+        out=tmp.reshape(bs,-1)#torch.flatten(tmp,1)
+        out = self.fc(out)
         out = torch.rad2deg(out)
         return out
 

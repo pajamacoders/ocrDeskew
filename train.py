@@ -6,7 +6,7 @@ import argparse
 import json
 import numpy as np
 from tqdm import tqdm
-from modules.utils import build_transformer, MLLogger
+from modules.utils import build_transformer, MLLogger, build_lr_scheduler
 from modules.dataset import build_dataloader, OCRDataset
 from modules.model import build_model
 
@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     logger.info('create optimizer')
     opt=torch.optim.Adam(model.parameters(), **cfg['optimizer_cfg']['args'])
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt,**cfg['lr_scheduler_cfg']['args'])
+    lr_scheduler = build_lr_scheduler(**cfg['lr_scheduler_cfg'], opt=opt)#torch.optim.lr_scheduler.CosineAnnealingLR(opt,**cfg['lr_scheduler_cfg']['args'])
 
     max_epoch = cfg['train_cfg']['max_epoch']
     valid_ecpoh = cfg['train_cfg']['validation_every_n_epoch']
@@ -124,4 +124,6 @@ if __name__ == "__main__":
         if (step+1)%valid_ecpoh==0:
             valid(model, valid_loader, fn_loss,  mltracker, step)
         lr_scheduler.step()
+        mltracker.log_metric(key='learning_rate', value=opt.param_groups[0]['lr'], step=step)
+    
         

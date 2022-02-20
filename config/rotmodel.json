@@ -1,5 +1,5 @@
 {
-    "train_cfg":{"max_epoch":1000, "validation_every_n_epoch":5},
+    "train_cfg":{"max_epoch":600, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
         "RandomRotation":{"degree":45},
@@ -9,7 +9,7 @@
     "dataset_cfg":{
         "type":"OCRDataset",
         "train_batch":128,
-        "valid_batch":1,
+        "valid_batch":2,
         "train":{
             "dataroot":"/train_data/train/*"
         },
@@ -24,14 +24,16 @@
     "optimizer_cfg":{
         "type":"Adam",
         "args":{
-            "lr":0.0001
+            "lr":1e-7
             }
         },
     "lr_scheduler_cfg":{
-        "type":"CosineAnnealingLR",
+        "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-        "T_max":1000,
-        "eta_min":1e-7,
+        "T_0":200,
+        "eta_max":1e-4,
+        "T_up":2,
+        "gamma":0.1,    
         "last_epoch":-1
         }
     },
