@@ -1,0 +1,48 @@
+{
+    "train_cfg":{"max_epoch":600, "validation_every_n_epoch":5},
+    "transform_cfg":{
+        "Resize":{"scale":4},
+        "RandomRotation":{"degree":30},
+        "Normalize":{"mean":0.0, "std":255.0},
+        "Shaper":{}
+    },
+    "dataset_cfg":{
+        "type":"OCRDataset",
+        "train_batch":128,
+        "valid_batch":2,
+        "train":{
+            "dataroot":"/train_data/train/*"
+        },
+        "valid":{
+            "dataroot":"/train_data/valid/*"
+        }
+    },
+    "model_cfg":{
+        "type":"DeskewNetV2",
+        "args":{"pretrained":"checkpoints/9f63ec_state_dict.pth"}
+    },
+    "optimizer_cfg":{
+        "type":"Adam",
+        "args":{
+            "lr":1e-7
+            }
+        },
+    "lr_scheduler_cfg":{
+        "type":"CosineAnnealingWarmUpRestarts",
+        "args":{
+        "T_0":200,
+        "eta_max":1e-4,
+        "T_up":2,
+        "gamma":0.1,    
+        "last_epoch":-1
+        }
+    },
+    "loss_cfg":{
+        "type":"MSELoss"
+    },
+    "mllogger_cfg":
+    {"exp_name":"ocr_deskew",
+        "run_name":"resnetTest",
+        "user_id": "pajamacoder"
+    }
+}

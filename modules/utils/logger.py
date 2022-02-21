@@ -41,11 +41,11 @@ class MLLogger:
 
     def log_state_dict(self, epoch, model, optimizer=None, scheduler=None, isbest=False):
         if isbest:
-            chkp_name=f'best_model.chkp'
-        elif epoch in [100,200,300]:
-            chkp_name=f'{epoch}_epoch_chkpoint.chkp'
+            chkp_name=f'best_model'
+        elif epoch in [100,200,300,400,500,600]:
+            chkp_name=f'{epoch}_epoch_chkpoint'
         else:
-            chkp_name='latest_model.chkp'
+            chkp_name='latest_model'
 
         state_dict = {
             "model": model.state_dict(),

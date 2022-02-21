@@ -22,68 +22,102 @@ def visualizer(data, logit):
     img = data['img'][ind].squeeze()
     img = img*std+mean
     img = img.data.cpu().numpy().copy().astype(np.uint8)
-    rotation=-logit[ind].item()
+    if len(logit)>1:
+        rotation, cls = -logit[0][ind].item(), logit[1][ind].sigmoid().item()
+    else:
+        rotation=-logit[ind].item()
+        cls = 0
 
     h,w = img.shape
     m = cv2.getRotationMatrix2D((w/2, h/2), rotation, 1)
     dst = cv2.warpAffine(img, m, (w,h))
     #name = os.path.basename(data['imgpath'][-1]).replace('.jpg', '_rev.jpg')
     resimg=cv2.hconcat([img, dst])
-    return resimg
+    return resimg, cls
     
 
 
 
-def valid(model, loader, fn_loss, mllogger, step):
+def valid(model, loader, fn_reg_loss,fn_cls_loss, mllogger, step):
     global minloss
     model.eval()
-    total_loss = 0
+    avg_total_loss = 0
+    avg_reg_loss = 0
+    avg_cls_loss = 0
     num_samples=0
 
     for i, data in tqdm(enumerate(loader)):
         data['img']=data['img'].cuda(non_blocking=True).float()
         data['degree']=data['degree'].cuda(non_blocking=True).float()
+        if 'cls' in data.keys():
+            data['cls'] = data['cls'].cuda(non_blocking=True).float()
 
         with torch.no_grad():
-            logit = model(data['img'])
-        logit=logit.squeeze()
-        loss = fn_loss(logit, data['degree'])
-        total_loss+=loss.detach()*logit.shape[0]
-        num_samples+=logit.shape[0]
+            reg_logit, cls_logit = model(data['img'])
+        reg_logit = reg_logit.squeeze()
+        cls_logit = cls_logit.squeeze()
+        loss = fn_reg_loss(reg_logit, data['degree'])
+        cls_loss = fn_cls_loss(cls_logit, data['cls'])
+        total_loss = 0.1*loss +cls_loss
 
-    avgloss =  (total_loss/num_samples).item()
-    logger.info(f'valid-{step} epoch:{avgloss:.4f}')
+        avg_total_loss+=total_loss.detach()*reg_logit.shape[0]
+        avg_reg_loss += loss.detach()*reg_logit.shape[0]
+        avg_cls_loss += cls_loss.detach()*reg_logit.shape[0]
+        num_samples+=reg_logit.shape[0]
 
-    mllogger.log_metric('valid_loss', avgloss, step)
+    avgloss =  (avg_total_loss/num_samples).item()
+    stat_reg_loss =  (avg_reg_loss/num_samples).item()
+    stat_cls_loss =  (avg_cls_loss/num_samples).item()
+    mllogger.log_metric('valid_loss',avgloss, step)
+    mllogger.log_metric('reg_loss',stat_reg_loss, step)
+    mllogger.log_metric('cls_loss',stat_cls_loss, step)
+    logger.info(f'valid-{step} epoch: total_loss:{avgloss:.4f}, reg_loss:{stat_reg_loss:.4f}, cls_loss:{stat_cls_loss:.4f}')
+
     if minloss > avgloss:
         mllogger.log_state_dict(step, model, isbest=True)
 
-    img = visualizer(data, logit)
-    mllogger.log_image(img, name=f'{step}_sample.jpg')
+    img, cls = visualizer(data, [reg_logit,cls_logit] )
+    mllogger.log_image(img, name=f'cls_{cls:.2f}_{step}_sample.jpg')
     
     
 
-def train(model, loader, fn_loss, optimizer, mllogger, step):
+def train(model, loader, fn_reg_loss, fn_cls_loss, optimizer, mllogger, step):
     model.train()
-    total_loss = 0
+    avg_total_loss = 0
+    avg_reg_loss = 0
+    avg_cls_loss = 0
     num_samples=0
+    total_loss = 0
     for i, data in tqdm(enumerate(loader)):
         optimizer.zero_grad()
-        data['img']=data['img'].cuda(non_blocking=True).float()
-        data['degree']=data['degree'].cuda(non_blocking=True).float()
+        data['img'] = data['img'].cuda(non_blocking=True).float()
+        data['degree'] = data['degree'].cuda(non_blocking=True).float()
+        if 'cls' in data.keys():
+            data['cls'] = data['cls'].cuda(non_blocking=True).float()
                 
-        logit = model(data['img'])
-        logit=logit.squeeze()
-        loss = fn_loss(logit, data['degree'])
-        total_loss+=loss.detach()*logit.shape[0]
-        num_samples+=logit.shape[0]
-        loss.backward()
+        reg_logit, cls_logit = model(data['img'])
+        reg_logit = reg_logit.squeeze()
+        cls_logit = cls_logit.squeeze()
+        loss = fn_reg_loss(reg_logit, data['degree'])
+        cls_loss = fn_cls_loss(cls_logit, data['cls'])
+
+        total_loss = 0.1*loss +cls_loss
+
+        avg_total_loss+=total_loss.detach()*reg_logit.shape[0]
+        avg_reg_loss += loss.detach()*reg_logit.shape[0]
+        avg_cls_loss += cls_loss.detach()*reg_logit.shape[0]
+        num_samples+=reg_logit.shape[0]
+        total_loss.backward()
         optimizer.step()
 
-    avgloss =  (total_loss/num_samples).item()
+    avgloss =  (avg_total_loss/num_samples).item()
+    stat_reg_loss =  (avg_reg_loss/num_samples).item()
+    stat_cls_loss =  (avg_cls_loss/num_samples).item()
     mllogger.log_metric('train_loss',avgloss, step)
-    logger.info(f'train-{step} epoch:{avgloss:.4f}')
-    
+    mllogger.log_metric('reg_loss',stat_reg_loss, step)
+    mllogger.log_metric('cls_loss',stat_cls_loss, step)
+    logger.info(f'train-{step} epoch: total_loss:{avgloss:.4f}, reg_loss:{stat_reg_loss:.4f}, cls_loss:{stat_cls_loss:.4f}')
+    mllogger.log_state_dict(step, model, isbest=False)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="handle arguments")
@@ -108,7 +142,8 @@ if __name__ == "__main__":
     model = build_model(**cfg['model_cfg'])
     model.cuda()
     logger.info('create loss function')
-    fn_loss = torch.nn.MSELoss()
+    fn_reg_loss = torch.nn.MSELoss()
+    fn_cls_loss = torch.nn.BCEWithLogitsLoss()
 
     logger.info('create optimizer')
     opt=torch.optim.Adam(model.parameters(), **cfg['optimizer_cfg']['args'])
@@ -120,9 +155,9 @@ if __name__ == "__main__":
     logger.info('set mlflow tracking')
     mltracker = MLLogger(cfg, logger)
     for step in range(max_epoch):
-        train(model, train_loader, fn_loss, opt, mltracker, step)
+        train(model, train_loader, fn_reg_loss, fn_cls_loss, opt, mltracker, step)
         if (step+1)%valid_ecpoh==0:
-            valid(model, valid_loader, fn_loss,  mltracker, step)
+            valid(model, valid_loader, fn_reg_loss, fn_cls_loss,  mltracker, step)
         lr_scheduler.step()
         mltracker.log_metric(key='learning_rate', value=opt.param_groups[0]['lr'], step=step)
     
