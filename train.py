@@ -119,7 +119,6 @@ def train(model, loader, fn_reg_loss, fn_cls_loss, optimizer, mllogger, step):
         total_loss.backward()
         optimizer.step()
         preds+=torch.argmax(torch.softmax(cls_logit, -1), -1).tolist()
-        break
 
     avgloss =  (avg_total_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
