@@ -60,7 +60,7 @@ class RandomRotation(object):
     def __init__(self, ratio, degree, buckets=None):
         self.variant = eval(degree) if isinstance(degree, str) else degree
         self.ratio = eval(ratio) if isinstance(ratio, str) else ratio
-        self.buckets = buckets
+        self.buckets = eval(buckets) if isinstance(buckets, str) else buckets
 
     def __call__(self, inp):
         if  np.random.rand()<self.ratio:

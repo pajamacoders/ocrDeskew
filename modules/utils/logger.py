@@ -15,7 +15,7 @@ class MLLogger:
         self.logger.info('start run')
         for k,v in config.items():
             self.log_param(key=k, value=v)
-        mlflow.set_tag("release.version", "0.1.0")
+        mlflow.set_tag("release.version", self.cfg['version'])
         
     def __del__(self):
         mlflow.end_run()
