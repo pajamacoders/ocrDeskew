@@ -7,7 +7,7 @@ import json
 import numpy as np
 from tqdm import tqdm
 from modules.utils import build_transformer, MLLogger
-from modules.dataset import build_dataloader, OCRDataset
+from modules.dataset import build_dataloader, OCRDatasetself.ratio
 from modules.model import build_model
 
 logger = logging.getLogger('deskew')
@@ -22,37 +22,59 @@ def visualizer(data, logit, mllogger):
         img = data['img'][ind].squeeze()
         img = img*std+mean
         img = img.data.cpu().numpy().copy().astype(np.uint8)
-        rotation=-logit[ind].item()
+        gt_deg = data['degree'].data.cpu().item()
+        if len(logit)>1:
+            rotation, cls = -logit[0][ind].item(), logit[1][ind].sigmoid().item()
+        else:
+            rotation=-logit[ind].item()
+            cls = 0
 
         h,w = img.shape
-        m = cv2.getRotationMatrix2D((w/2, h/2), rotation, 1)
-        dst = cv2.warpAffine(img, m, (w,h))
+        if cls>0.6:
+            m = cv2.getRotationMatrix2D((w/2, h/2), rotation, 1)
+            dst = cv2.warpAffine(img, m, (w,h))
+        else:
+            dst=img
         name = os.path.basename(data['imgpath'][ind]).replace('.jpg', '_rev.jpg')
         resimg=cv2.hconcat([img, dst])
-        mllogger.log_image(resimg, name=name)
+        mllogger.log_image(resimg, name=f'cls_{cls:.2f}_gt_{gt_deg:.2f}_pdeg_{-rotation:.2f}_{name}')
 
-def test(model, loader, fn_loss, mllogger):
+def test(model, loader, fn_reg_loss, fn_cls_loss, mllogger):
     global minloss
     model.eval()
-    total_loss = 0
+    avg_total_loss = 0
+    avg_reg_loss = 0
+    avg_cls_loss = 0
     num_samples=0
 
     for i, data in tqdm(enumerate(loader)):
         data['img']=data['img'].cuda(non_blocking=True).float()
         data['degree']=data['degree'].cuda(non_blocking=True).float()
-
+        if 'cls' in data.keys():
+            data['cls'] = data['cls'].cuda(non_blocking=True).float()
         with torch.no_grad():
-            logit = model(data['img'])
-        logit=logit.squeeze()
-        loss = fn_loss(logit, data['degree'])
-        total_loss+=loss.detach()*logit.shape[0]
-        num_samples+=logit.shape[0]
-        visualizer(data, logit, mllogger)
+            reg_logit, cls_logit = model(data['img'])
+        reg_logit = reg_logit.squeeze()
+        cls_logit = cls_logit.squeeze()
+        loss = fn_reg_loss(reg_logit, data['degree'])
+        cls_loss = fn_cls_loss(cls_logit, data['cls'])
 
-    avgloss =  (total_loss/num_samples).item()
+        total_loss = 0.1*loss +cls_loss
+
+        avg_total_loss+=total_loss.detach()*reg_logit.shape[0]
+        avg_reg_loss += loss.detach()*reg_logit.shape[0]
+        avg_cls_loss += cls_loss.detach()*reg_logit.shape[0]
+        num_samples+=reg_logit.shape[0]
+        visualizer(data, [reg_logit,cls_logit], mllogger)
+
+    avgloss =  (avg_total_loss/num_samples).item()
+    stat_reg_loss =  (avg_reg_loss/num_samples).item()
+    stat_cls_loss =  (avg_cls_loss/num_samples).item()
+    mllogger.log_metric('test_loss',avgloss, 0)
+    mllogger.log_metric('test_reg_loss',stat_reg_loss, 0)
+    mllogger.log_metric('test_cls_loss',stat_cls_loss, 0)
+    logger.info(f'test-0 epoch: total_loss:{avgloss:.4f}, reg_loss:{stat_reg_loss:.4f}, cls_loss:{stat_cls_loss:.4f}')
     logger.info(f'test-0 epoch:{avgloss:.4f}')
-
-    mllogger.log_metric('test_loss', avgloss, 0)
 
    
     #mllogger.log_image(img, name=f'{step}_sample.jpg')
@@ -80,7 +102,8 @@ if __name__ == "__main__":
     model = build_model(**cfg['model_cfg'])
     model.cuda()
     logger.info('create loss function')
-    fn_loss = torch.nn.MSELoss()
+    fn_reg_loss = torch.nn.MSELoss()
+    fn_cls_loss = torch.nn.BCEWithLogitsLoss()
 
     logger.info('create optimizer')
     max_epoch = cfg['train_cfg']['max_epoch']
@@ -88,6 +111,6 @@ if __name__ == "__main__":
     logger.info(f'max_epoch :{max_epoch}')
     logger.info('set mlflow tracking')
     mltracker = MLLogger(cfg, logger)
-    test(model, valid_loader, fn_loss,  mltracker)
+    test(model, valid_loader, fn_reg_loss, fn_cls_loss,  mltracker)
        
         

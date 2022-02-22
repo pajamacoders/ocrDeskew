@@ -69,8 +69,8 @@ def valid(model, loader, fn_reg_loss,fn_cls_loss, mllogger, step):
     stat_reg_loss =  (avg_reg_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
     mllogger.log_metric('valid_loss',avgloss, step)
-    mllogger.log_metric('reg_loss',stat_reg_loss, step)
-    mllogger.log_metric('cls_loss',stat_cls_loss, step)
+    mllogger.log_metric('valid_reg_loss',stat_reg_loss, step)
+    mllogger.log_metric('valid_cls_loss',stat_cls_loss, step)
     logger.info(f'valid-{step} epoch: total_loss:{avgloss:.4f}, reg_loss:{stat_reg_loss:.4f}, cls_loss:{stat_cls_loss:.4f}')
 
     if minloss > avgloss:
@@ -113,9 +113,9 @@ def train(model, loader, fn_reg_loss, fn_cls_loss, optimizer, mllogger, step):
     avgloss =  (avg_total_loss/num_samples).item()
     stat_reg_loss =  (avg_reg_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
-    mllogger.log_metric('train_loss',avgloss, step)
-    mllogger.log_metric('reg_loss',stat_reg_loss, step)
-    mllogger.log_metric('cls_loss',stat_cls_loss, step)
+    mllogger.log_metric('train_total_loss',avgloss, step)
+    mllogger.log_metric('train_reg_loss',stat_reg_loss, step)
+    mllogger.log_metric('train_cls_loss',stat_cls_loss, step)
     logger.info(f'train-{step} epoch: total_loss:{avgloss:.4f}, reg_loss:{stat_reg_loss:.4f}, cls_loss:{stat_cls_loss:.4f}')
     mllogger.log_state_dict(step, model, isbest=False)
 
@@ -137,7 +137,8 @@ if __name__ == "__main__":
     
     tr = build_transformer(cfg['transform_cfg'])
     train_loader, valid_loader = build_dataloader(**cfg['dataset_cfg'], augment_fn=tr)
- 
+    for data in train_loader:
+        print(data)
     logger.info('create model')
     model = build_model(**cfg['model_cfg'])
     model.cuda()

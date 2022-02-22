@@ -62,7 +62,7 @@ class RandomRotation(object):
         self.ratio = eval(ratio) if isinstance(ratio, str) else ratio
 
     def __call__(self, inp):
-        if self.ratio < np.random.rand():
+        if  np.random.rand()<self.ratio:
             deg = np.random.uniform(-self.variant, self.variant)
             img = inp['img']
             h,w= img.shape
