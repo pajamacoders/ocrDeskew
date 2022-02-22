@@ -57,13 +57,14 @@ class RandomCrop(object):
         return inp
 
 class RandomRotation(object):
-    def __init__(self, ratio, degree):
+    def __init__(self, ratio, degree, buckets=None):
         self.variant = eval(degree) if isinstance(degree, str) else degree
         self.ratio = eval(ratio) if isinstance(ratio, str) else ratio
+        self.buckets = buckets
 
     def __call__(self, inp):
         if  np.random.rand()<self.ratio:
-            deg = np.random.uniform(-self.variant, self.variant)
+            deg = np.random.uniform(-self.variant, self.variant-0.1)
             img = inp['img']
             h,w= img.shape
             matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
@@ -73,6 +74,11 @@ class RandomRotation(object):
         else:
             deg = 0
             cls =0
+        if self.buckets:
+            rad = np.deg2rad(deg)
+            range_rad = np.deg2rad(self.variant)
+            bucket = int(self.buckets * (rad+range_rad) / (2*range_rad))
+            inp['rot_id']=bucket
         inp['cls']=cls
         inp['degree'] = deg
         return inp
