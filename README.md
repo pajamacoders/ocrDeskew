@@ -1,6 +1,7 @@
 # ocrDeskew
 
 ## requirements
+docker image : nvcr.io/nvidia/pytorch:22.01-py3
 mlflow==1.23.1
 opencv-python==3.4.11
 
