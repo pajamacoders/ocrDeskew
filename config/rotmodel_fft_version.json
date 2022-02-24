@@ -2,7 +2,7 @@
     "train_cfg":{"max_epoch":800, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-        "RandomRotation":{"ratio":1, "degree":60, "buckets":120},
+        "RandomRotation":{"ratio":1, "degree":30, "buckets":120},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
