@@ -19,7 +19,7 @@
     },
     "model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":356, "last_fc_in_ch":512, "pretrained":"checkpoints/fft_large_9522d3_latest_checkpoint.pth"}
+        "args":{"buckets":356, "last_fc_in_ch":128}
     },
     "optimizer_cfg":{
         "type":"Adam",
