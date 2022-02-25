@@ -33,6 +33,21 @@ cls_loss:0.0887, precision:0.9731, recall:0.9810, f1_score:0.9730
 
 ls_loss:11.7469, precision:0.0043, recall:0.0172, f1_score:0.0065 ( 사용 불가.)
 
+2. [cls_model_deg_range_89](https://drive.google.com/file/d/1P_fj-hDsW4TJkUCo-jKMVQEPrTPsy7M0/view?usp=sharing)
+
+tag: cls_model_deg_range_89
+
+데이터셋: 학습시 입력 이미지를 -89~+89 도 범위 내에서 임의로 회전 시키고 0.5도 단위로 class를 구분해 회전의 정도를 classification 
+문제로 정의 하고 학습시킨 checkpoint
+
+테스트 결과:
+1.1 입력 이미지가 -89~+89 도 이내의 회전을 보일 경우 testset 에 대해 아래 결과를 얻음:
+
+cls_loss:0.0898, precision:0.9495, recall:0.9454, f1_score:0.9441
+
+테스트시 위 모델 다운 받고 'config/rotmodel_fft_version_large.json' 의 model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의 
+path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정.
+
 
 ## run tracking ui
 ```bash

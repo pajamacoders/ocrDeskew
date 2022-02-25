@@ -17,7 +17,7 @@ class ConvBnRelu(nn.Module):
         return self.conv_bn_relu(x)
 
 class DeskewNetV4(nn.Module):
-    def __init__(self, buckets, pretrained=None):
+    def __init__(self, buckets, last_fc_in_ch, pretrained=None):
         super(DeskewNetV4, self).__init__()
         buckets = eval(buckets) if isinstance(buckets, str) else buckets
         assert isinstance(buckets, int), 'buckets must be type int'
@@ -30,10 +30,10 @@ class DeskewNetV4(nn.Module):
             )
         
         self.block2 = ConvBnRelu(16,8,k,padding=k//2)
-        self.fc = nn.Sequential(nn.Linear(131072,256, bias=False),
-            nn.BatchNorm1d(256),
+        self.fc = nn.Sequential(nn.Linear(131072,last_fc_in_ch, bias=False),
+            nn.BatchNorm1d(last_fc_in_ch),
             nn.ReLU(True),
-            nn.Linear(256, buckets, bias=False))
+            nn.Linear(last_fc_in_ch, buckets, bias=False))
 
         self.__init_weight()
         if pretrained:

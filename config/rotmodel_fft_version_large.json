@@ -2,7 +2,7 @@
     "train_cfg":{"max_epoch":801, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-        "RandomRotation":{"ratio":1, "degree":30, "buckets":120},
+        "RandomRotation":{"ratio":1, "degree":89, "buckets":356},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
@@ -19,7 +19,7 @@
     },
     "model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":356, "last_fc_in_ch":256}
+        "args":{"buckets":356, "last_fc_in_ch":512, "pretrained":"checkpoints/fft_large_9522d3_latest_checkpoint.pth"}
     },
     "optimizer_cfg":{
         "type":"Adam",
