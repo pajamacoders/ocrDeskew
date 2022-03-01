@@ -2,7 +2,9 @@
 
 ## requirements
 docker image : nvcr.io/nvidia/pytorch:22.01-py3
+
 mlflow==1.23.1
+
 opencv-python==3.4.11
 
 
@@ -63,7 +65,15 @@ cls_loss:0.1241, precision:0.9466, recall:0.9426, f1_score:0.9427
 테스트시 위 모델 다운 받고 'config/rotmodel_fft_version_small.json' 의 model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의 
 path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정
 
+## demo result
+demo result 에 있는 IMAGE들은 checkpoint 3 [cls_model_deg_range_89_small]의 inference 결과.
 
+```bash
+mkdir checkpoints
+cd checkpoints
+#download cls_model_deg_range_89_small here
+python3 serve.py --config config/rotmodel_fft_version_small.json
+```
 
 ## run tracking ui
 ```bash
