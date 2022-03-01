@@ -58,7 +58,7 @@ def test(model, loader, fn_reg_loss, fn_cls_loss, mllogger,info):
 
         with torch.no_grad():
             cls_logit = model(data['img'])
-        cls_logit = cls_logit.squeeze()
+        #cls_logit = cls_logit.squeeze()
     
         cls_loss = fn_cls_loss(cls_logit, data['rot_id'])
         total_loss = cls_loss

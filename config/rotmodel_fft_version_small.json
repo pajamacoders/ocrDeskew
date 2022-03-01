@@ -2,14 +2,14 @@
     "train_cfg":{"max_epoch":801, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-        "RandomRotation":{"ratio":1, "degree":89, "buckets":356},
+        "RandomRotation":{"ratio":0, "degree":89, "buckets":356},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
     "dataset_cfg":{
         "type":"OCRDataset",
         "train_batch":128,
-        "valid_batch":2,
+        "valid_batch":1,
         "train":{
             "dataroot":"/train_data/train/*"
         },
