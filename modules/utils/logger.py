@@ -12,7 +12,7 @@ class MLLogger:
         experiment = mlflow.get_experiment_by_name(exp_name)
         if not experiment:
             self.logger.info(f'No such experiment, Create experiment {exp_name} ')
-            experiment_id = mlflow.create_experiment('ocr_deskew')
+            experiment_id = mlflow.create_experiment(exp_name)
             experiment = mlflow.get_experiment(experiment_id)
         self.run = mlflow.start_run(run_name = run_name, experiment_id=experiment.experiment_id)
         self.logger.info('start run')

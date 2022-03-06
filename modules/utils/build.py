@@ -1,11 +1,13 @@
 from torchvision import transforms
-from .transform import RandomRotation, Normalize, RandomCrop, Resize, Shaper
+from .transform import RandomRotation, Normalize, RandomCrop, Resize, Shaper, RandomOrientation
 from .custom_lr_scheduler import CosineAnnealingWarmUpRestarts
-transfactory={'Resize':Resize,
-'RandomCrop':RandomCrop,
-'RandomRotation':RandomRotation,
-'Normalize':Normalize,
-'Shaper':Shaper
+transfactory={
+    'Normalize':Normalize,
+    'Resize':Resize,
+    'RandomCrop':RandomCrop,
+    'RandomRotation':RandomRotation,
+    'RandomOrientation':RandomOrientation,
+    'Shaper':Shaper,
 }
 
 lr_scheduler_factory={

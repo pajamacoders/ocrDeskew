@@ -64,6 +64,8 @@ cls_loss:0.1241, precision:0.9466, recall:0.9426, f1_score:0.9427
 path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정
 
 
+## demo result 
+
 
 ## run tracking ui
 ```bash

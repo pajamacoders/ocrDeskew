@@ -1,0 +1,50 @@
+{
+    "train_cfg":{"max_epoch":500, "validation_every_n_epoch":5},
+    "transform_cfg":{
+        "Resize":{"scale":4},
+        "RandomOrientation":{"ratio":0.5},
+        "Normalize":{"mean":0.0, "std":255.0},
+        "Shaper":{}
+    },
+    "dataset_cfg":{
+        "type":"OCRDataset",
+        "train_batch":128,
+        "valid_batch":2,
+        "train":{
+            "dataroot":"/data/**/*.jpg"
+        },
+        "valid":{
+            "dataroot":"/data/**/*.jpg"
+        }
+    },
+    "model_cfg":{
+        "type":"RotationNet",
+        "args":{}
+    },
+    "optimizer_cfg":{
+        "type":"Adam",
+        "args":{
+            "lr":1e-6
+            }
+        },
+    "lr_scheduler_cfg":{
+        "type":"CosineAnnealingWarmUpRestarts",
+        "args":{
+            "T_0":150,
+            "eta_max":1e-3,
+            "T_up":3,
+            "gamma":0.2,    
+            "last_epoch":-1
+            }
+    },
+    "loss_cfg":{
+        "type":"BCEWithLogitLoss"
+    },
+    "mllogger_cfg":
+    {"exp_name":"ocr_orientation_prediction",
+        "run_name":"RotationNetTest",
+        "user_id": "pajamacoder",
+        "save_model_at_epoch":[300,400,500],
+        "version":"1.0.0"
+    }
+}

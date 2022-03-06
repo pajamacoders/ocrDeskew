@@ -1,9 +1,9 @@
-from .rotation_model import DeskewNet
+from .rotationnet import RotationNet
 from .rotation_model_v2 import DeskewNetV2
 from .rotation_model_v3 import DeskewNetV3
 from .rotation_model_fft import DeskewNetV4
 models={
-    "DeskewNet":DeskewNet,
+    "RotationNet":RotationNet,
     "DeskewNetV2":DeskewNetV2,
     "DeskewNetV3":DeskewNetV3,
     "DeskewNetV4":DeskewNetV4,

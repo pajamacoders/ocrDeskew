@@ -56,6 +56,22 @@ class RandomCrop(object):
         inp['crop_cy']=cy
         return inp
 
+class RandomOrientation(object):
+    def __init__(self, ratio):
+        self.ratio=ratio
+    
+    def __call__(self, inp):
+        img = inp['img']
+        flip = 1 if np.random.rand()<self.ratio else 0
+        if flip:
+            h,w= img.shape
+            matrix = cv2.getRotationMatrix2D((w/2, h/2), 180, 1)
+            img = cv2.warpAffine(img, matrix, (w, h),borderValue=0)
+        inp['img']=img
+        inp['flip']=flip
+        return inp
+            
+
 class RandomRotation(object):
     def __init__(self, ratio, degree, buckets=None):
         self.variant = eval(degree) if isinstance(degree, str) else degree

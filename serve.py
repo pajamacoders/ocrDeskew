@@ -33,6 +33,7 @@ def visualizer(data, logit,):
     resimg=cv2.hconcat([img, dst])
     cv2.imwrite('account1_30.png',resimg)
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="handle arguments")
     parser.add_argument("--config", help="path to the configuration file", type=str, default='config/renet_ocr.json')
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     img = 255-img
     inp={'img':img}
-    data = tr(inp)  
+    data = tr(inp)  # resize and change shape
     data['img']=torch.from_numpy(data['img']).float()
     if len(data['img'].shape)<4:
         data['img']=data['img'].unsqueeze(0)
