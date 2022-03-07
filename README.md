@@ -6,15 +6,25 @@ mlflow==1.23.1
 opencv-python==3.4.11
 
 
-## run command
-train:
+## run command(회전 보정)
 ```bash
-python3 train.py --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
+python3 train.py --task deskew --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
 ```
 test:
 ```bash
-python3 test.py --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
+python3 test.py --task deskew --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
 ```
+
+## run command(상하 반전 classification)
+train:
+```bash
+python3 train.py --task orientation --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
+```
+test:
+```bash
+python3 test.py --task orientation --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
+```
+
 
 ## checkpoints
 1. [cls_model_deg_range_30](https://drive.google.com/file/d/1Q0mxqBSPREJYYjbcerorVv94v9pe2syC/view?usp=sharing)

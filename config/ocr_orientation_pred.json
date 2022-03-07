@@ -1,25 +1,27 @@
 {
-    "train_cfg":{"max_epoch":500, "validation_every_n_epoch":5},
+    "task":"orientaion_prediction",
+    "train_cfg":{"max_epoch":100, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
         "RandomOrientation":{"ratio":0.5},
+        "RandomRotation":{"ratio":0, "degree":5, "buckets":4},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
     "dataset_cfg":{
         "type":"OCRDataset",
         "train_batch":128,
-        "valid_batch":2,
+        "valid_batch":1,
         "train":{
-            "dataroot":"/data/**/*.jpg"
+            "dataroot":"/train_data/train/*"
         },
         "valid":{
-            "dataroot":"/data/**/*.jpg"
+            "dataroot":"/train_data/valid/*"
         }
     },
     "model_cfg":{
         "type":"RotationNet",
-        "args":{}
+        "args":{"pretrained":"checkpoints/v101_upside_down_state_dict.pth"}
     },
     "optimizer_cfg":{
         "type":"Adam",
@@ -30,7 +32,7 @@
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-            "T_0":150,
+            "T_0":30,
             "eta_max":1e-3,
             "T_up":3,
             "gamma":0.2,    
@@ -44,7 +46,7 @@
     {"exp_name":"ocr_orientation_prediction",
         "run_name":"RotationNetTest",
         "user_id": "pajamacoder",
-        "save_model_at_epoch":[300,400,500],
-        "version":"1.0.0"
+        "save_model_at_epoch":[30,60,90,100],
+        "version":"1.0.1"
     }
 }

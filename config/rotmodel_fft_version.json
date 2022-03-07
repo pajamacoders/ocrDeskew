@@ -1,4 +1,5 @@
 {
+    "task":"deskew",
     "train_cfg":{"max_epoch":801, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},

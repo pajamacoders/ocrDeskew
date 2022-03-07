@@ -1,8 +1,10 @@
 {
-    "train_cfg":{"max_epoch":801, "validation_every_n_epoch":5},
+    "task":"deskew",
+    "train_cfg":{"max_epoch":401, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-        "RandomRotation":{"ratio":0, "degree":89, "buckets":356},
+        "RandomOrientation":{"ratio":0.5},
+        "RandomRotation":{"ratio":0.5, "degree":89, "buckets":356},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
@@ -19,21 +21,21 @@
     },
     "model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":356, "last_fc_in_ch":128, "pretrained":"checkpoints/fft_small_8044f2_state_dict.pth"}
+        "args":{"buckets":356, "last_fc_in_ch":128}
     },
     "optimizer_cfg":{
         "type":"Adam",
         "args":{
-            "lr":1e-8
+            "lr":1e-6
             }
         },
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-        "T_0":200,
+        "T_0":100,
         "eta_max":1e-3,
-        "T_up":1,
-        "gamma":0.1,    
+        "T_up":3,
+        "gamma":0.5,    
         "last_epoch":-1
         }
     },
@@ -41,10 +43,11 @@
         "type":"CELoss"
     },
     "mllogger_cfg":
-    {"exp_name":"ocr_deskew",
+    {
+        "exp_name":"ocr_deskew",
         "run_name":"resnetTest",
         "user_id": "pajamacoder",
-        "save_model_at_epoch":[600,700,800],
-        "version":"1.1.0"
+        "save_model_at_epoch":[300,400],
+        "version":"1.1.1"
     }
 }
