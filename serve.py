@@ -4,6 +4,7 @@ import torch
 import logging
 import argparse
 import json
+import glob
 import numpy as np
 from tqdm import tqdm
 import torchvision.transforms.functional as ttf
@@ -26,7 +27,7 @@ def visualizer_for_single_input(data, logit, logger, deskew_deg):
     img = img.data.cpu().numpy().copy().astype(np.uint8)
     gt_flip = data['flip']
     prob = torch.sigmoid(logit[0])
-    pred_flip = (prob>0.5).int()
+    pred_flip = (prob>0.8).int()
 
     rotation = 180 if pred_flip else 0
     h,w = img.shape
@@ -83,30 +84,31 @@ if __name__ == "__main__":
     deskew_model.eval() # 이게 없으면 "expected more than 1 value per channel when training, got input size" 에러 발생
     orientation_model.cuda()
     orientation_model.eval()
-
-    img_root = 'test_file/account1_30.png'
-    img = cv2.imread(img_root)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = 255-img
-    inp={'img':img, 'imgpath': img_root}
-    
-    data = tr(inp) # resize and change shape
     mltracker = MLLogger(cfg, logger)
+    imgs = glob.glob('./test_file/*')#test_file/account1_30.png'
+    for impath in tqdm(imgs):
+        img = cv2.imread(impath)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = 255-img
+        inp={'img':img, 'imgpath': impath}
+        
+        data = tr(inp) # resize and change shape
 
-    data['img'] = torch.from_numpy(data['img']).float()
-    if len(data['img'].shape)<4:
-        data['img'] = data['img'].unsqueeze(0)
 
-    out = deskew_model(data['img'].cuda())
+        data['img'] = torch.from_numpy(data['img']).float()
+        if len(data['img'].shape)<4:
+            data['img'] = data['img'].unsqueeze(0)
 
-    rot_id = torch.argmax(torch.softmax(out,-1),-1)
-    rad_range = np.deg2rad(89) #89 와 356 은 모델 training 시에 사용된 constant
-    rotation = rot_id*rad_range*2/356-rad_range
-    if isinstance(rotation, torch.Tensor):
-        rotation = np.rad2deg(rotation.item())
-    deskew_img = ttf.rotate(data['img'], angle=-rotation)
-    out = orientation_model(deskew_img.cuda())
-    visualizer_for_single_input(data, out, mltracker, -rotation)
+        out = deskew_model(data['img'].cuda())
+
+        rot_id = torch.argmax(torch.softmax(out,-1),-1)
+        rad_range = np.deg2rad(89) #89 와 356 은 모델 training 시에 사용된 constant
+        rotation = rot_id*rad_range*2/356-rad_range
+        if isinstance(rotation, torch.Tensor):
+            rotation = np.rad2deg(rotation.item())
+        deskew_img = ttf.rotate(data['img'], angle=-rotation)
+        out = orientation_model(deskew_img.cuda())
+        visualizer_for_single_input(data, out, mltracker, -rotation)
 
 
 

@@ -38,9 +38,6 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
         with torch.no_grad():
             cls_logit = model(data['img'])
 
-        if not cls_logit.shape == data[key_target].shape:
-            cls_logit=cls_logit.reshape(data[key_target].shape)
-
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
         total_loss = cls_loss
         avg_total_loss+=total_loss.detach()*cls_logit.shape[0]
@@ -89,9 +86,6 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
                 
         cls_logit = model(data['img'])
 
-        if not cls_logit.shape == data[key_target].shape:
-            cls_logit=cls_logit.reshape(data[key_target].shape)
-            
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
         total_loss = cls_loss
         avg_total_loss+=total_loss.detach()*cls_logit.shape[0]

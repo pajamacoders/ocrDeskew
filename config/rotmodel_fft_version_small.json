@@ -21,7 +21,7 @@
     },
     "model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":356, "last_fc_in_ch":128}
+        "args":{"buckets":356, "last_fc_in_ch":128, "pretrained":"checkpoints/deskew_model_aug_rot_180_state_dict.pth"}
     },
     "optimizer_cfg":{
         "type":"Adam",
