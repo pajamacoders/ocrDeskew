@@ -156,8 +156,7 @@ if __name__ == "__main__":
         vis_func = visualize_orientation_prediction_outputs
         prediction_parser = parse_orientation_prediction_outputs
         key_metric = 'flip'
-        fn_cls_loss = torch.nn.BCEWithLogitsLoss() 
-        
+        fn_cls_loss = torch.nn.BCEWithLogitsLoss()      
     
     for step in range(max_epoch):
         train(model, train_loader, fn_cls_loss, key_metric, opt, mltracker, step, prediction_parser)
@@ -165,5 +164,6 @@ if __name__ == "__main__":
             valid(model, valid_loader, fn_cls_loss, key_metric,  mltracker, step, vis_func, prediction_parser)
         lr_scheduler.step()
         mltracker.log_metric(key='learning_rate', value=opt.param_groups[0]['lr'], step=step)
+
     
         

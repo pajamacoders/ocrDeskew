@@ -8,7 +8,7 @@ class MLLogger:
         run_name = self.cfg['run_name']
         if "save_model_at_epoch" not in self.cfg.keys():
             self.cfg["save_model_at_epoch"]=[800]
-        
+
         experiment = mlflow.get_experiment_by_name(exp_name)
         if not experiment:
             self.logger.info(f'No such experiment, Create experiment {exp_name} ')
@@ -36,11 +36,11 @@ class MLLogger:
     def load_state_dict(self, path):
         pass
 
-    def load_model(self, path):
+    def load_model(self, model, path):
         pass
 
     def log_model(self, jit_model, name):
-        mlflow.pytorch.log_model(pytorch_mode=jit_model, artifact_path = f'model/{name}')
+        mlflow.pytorch.log_model(pytorch_model=jit_model, artifact_path = name)
 
     def log_state_dict(self, epoch, model, optimizer=None, scheduler=None, isbest=False):
         if isbest:

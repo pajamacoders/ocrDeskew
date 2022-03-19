@@ -27,7 +27,7 @@ def visualizer_for_single_input(data, logit, logger, deskew_deg):
     img = img.data.cpu().numpy().copy().astype(np.uint8)
     gt_flip = data['flip']
     prob = torch.sigmoid(logit[0])
-    pred_flip = (prob>0.8).int()
+    pred_flip = (prob>0.5).int()
 
     rotation = 180 if pred_flip else 0
     h,w = img.shape
