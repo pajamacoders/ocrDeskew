@@ -1,9 +1,10 @@
 # ocrDeskew
 
 ## requirements
-docker image : nvcr.io/nvidia/pytorch:22.01-py3
-mlflow==1.23.1
-opencv-python==3.4.11
+도커 파일 참조
+```bash
+docker build -t ocr_deskew:latest .
+```
 
 
 ## run command(회전 보정)
