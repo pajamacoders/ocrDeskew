@@ -11,8 +11,6 @@ import torchvision.transforms.functional as ttf
 from modules.utils import build_transformer, MLLogger
 from modules.model import build_model
 
-
-
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
 stream_handler = logging.StreamHandler()
@@ -35,7 +33,8 @@ def visualizer_for_single_input(data, logit, logger, deskew_deg):
     resimg = cv2.hconcat([img, dst])
     name = os.path.basename(data['imgpath'])
     save_name = f'pred_{rotation:.2f}_gt_{gt_flip:.2f}_{name}'
-    logger.log_image(resimg, name=save_name)
+    if logger:
+        logger.log_image(resimg, name=save_name)
 
 def visualizer(data, logit,):
     mean, std = data['mean'], data['std']

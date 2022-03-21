@@ -4,26 +4,23 @@
 도커 파일 참조
 ```bash
 docker build -t ocr_deskew:latest .
+docker run -it --gpus all -p 0.0.0.0:5000:5000 -v /path/to/project:/code -v /path/to/data:/home/train_data_v2 ocr_deskew:latest
 ```
 
-
-## run command(회전 보정)
-```bash
-python3 train.py --task deskew --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
-```
-test:
-```bash
-python3 test.py --task deskew --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
-```
-
-## run command(상하 반전 classification)
+## run command
 train:
 ```bash
-python3 train.py --task orientation --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
+python3 train.py --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
 ```
+
 test:
 ```bash
-python3 test.py --task orientation --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
+python3 test.py --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
+```
+
+serve:
+```bash
+python3 serve.py --deskew_config config/rotmodel_fft_version_small.json --orientation_config config/upside_down_vit.json --run_name {RUN_NAME_YOU_WANT} 
 ```
 
 
@@ -77,12 +74,16 @@ model config file: config/upside_down_vit.json
 예)
 1. 회전 모델 체크포인트 deskew_model_aug_rot_180_state_dict를  ./checkpoints 에 다운로드
 2. 해당 체크포인트의 model config 파일(config/rotmodel_fft_version_small.json)의 model_cfg->args에 pretrained 파라미터 추가
-  -> "model_cfg":{
+```
+    -> "model_cfg":{
         "type":"DeskewNetV4",
         "args":{"buckets":356, "last_fc_in_ch":128, "pretrained":"checkpoints/deskew_model_aug_rot_180_state_dict.pth"}
     }
+```
+
 3. 상하 반전 보정 모델 체크 포인트 upside_down_mobilevit_v1.0를 .checkpoints/에 다운로드
 4. 상하 반전 보정 모델의 model config 파일(config/upside_down_vit.json)의  model_cfg->args에 pretrained 파라미터 추가
+```
   ->  "model_cfg":{
         "type":"MobileViT",
         "args":{
@@ -94,6 +95,7 @@ model config file: config/upside_down_vit.json
             "pretrained":"checkpoints/upside_down_v1.0.pth"
         }
     }
+```
 5. 실행
 ```bash
 python3 serve.py --deskew_config config/rotmodel_fft_version_small.json --orientation_config config/upside_down_vit.json --run_name your_run_name
