@@ -9,9 +9,8 @@ import numpy as np
 from tqdm import tqdm
 import torchvision.transforms.functional as ttf
 from modules.utils import build_transformer, MLLogger
-from modules.dataset import build_dataloader
 from modules.model import build_model
-from sklearn.metrics import precision_recall_fscore_support
+
 
 
 logger = logging.getLogger('deskew')
@@ -85,7 +84,7 @@ if __name__ == "__main__":
     orientation_model.cuda()
     orientation_model.eval()
     mltracker = MLLogger(cfg, logger)
-    imgs = glob.glob('./test_file/*')#test_file/account1_30.png'
+    imgs = glob.glob('./test_file/*')
     for impath in tqdm(imgs):
         img = cv2.imread(impath)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

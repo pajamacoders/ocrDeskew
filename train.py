@@ -1,14 +1,11 @@
 from functools import partial
-import cv2
-import os
 import torch
 import logging
 import argparse
 import json
-import numpy as np
 from tqdm import tqdm
 from modules.utils import build_transformer, MLLogger, build_lr_scheduler
-from modules.dataset import build_dataloader, OCRDataset
+from modules.dataset import build_dataloader
 from modules.model import build_model
 from sklearn.metrics import precision_recall_fscore_support
 from utils import parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import os
 from einops import rearrange
 
 
@@ -165,7 +165,7 @@ class MobileViTBlock(nn.Module):
 
 
 class MobileViT(nn.Module):
-    def __init__(self, image_size, dims, channels, num_classes, expansion=4, kernel_size=3, patch_size=(2, 2)):
+    def __init__(self, image_size, dims, channels, num_classes, expansion=4, kernel_size=3, patch_size=(2, 2), pretrained=None):
         super().__init__()
         ih, iw = image_size
         ph, pw = patch_size
@@ -193,6 +193,9 @@ class MobileViT(nn.Module):
 
         self.pool = nn.AvgPool2d(ih//32, 1)
         self.fc = nn.Linear(channels[-1], num_classes, bias=False)
+    
+        if pretrained:
+            self.load_weight(pretrained)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -215,6 +218,19 @@ class MobileViT(nn.Module):
         x = self.pool(x).view(-1, x.shape[1])
         x = self.fc(x).squeeze(-1)
         return x
+
+    def load_weight(self, pretrained):
+        if os.path.exists(pretrained):
+            pre_state_dict = torch.load(pretrained)['model']
+            state_dict = self.state_dict()
+            total_params = len(state_dict.keys())
+            hit_cnt = 0
+            for k, v in pre_state_dict.items():
+                if k in state_dict.keys():
+                    state_dict[k]=v
+                    hit_cnt+=1
+            print(f'hit count : {hit_cnt}/{total_params} prameter loaded!') 
+            self.load_state_dict(state_dict)
 
 
 def mobilevit_xxs():

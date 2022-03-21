@@ -13,10 +13,10 @@
         "train_batch":128,
         "valid_batch":1,
         "train":{
-            "dataroot":"/train_data/train/*"
+            "dataroot":"/home/train_data_v2/train/*"
         },
         "valid":{
-            "dataroot":"/train_data/valid/*"
+            "dataroot":"/home/train_data_v2/valid/*"
         }
     },
     "model_cfg":{

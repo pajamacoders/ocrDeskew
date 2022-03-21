@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  train:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: ${REPO}:${TAG}
+    runtime: nvidia
+    container_name: pajama_ocr
+    shm_size: '4gb'
+    stdin_open: true # docker run -i
+    tty: true #docker run -t
+    networks: 
+      - backend
+    volumes:
+      - ${PWD}:/workspace
+      - ${DATA_PATH_ON_HOST}:${DATA_PATH_ON_CONTAINER}
+      - ${HOST_MLLOG_ROOT_PATH}:${MLLOG_ROOT_MOUNT_TARGET}
+      - ${HOST_HOME}:${CONTAINER_HOME}
+    ports:
+      - ${TRAINER_PORT}:${TRAINER_PORT}
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow_tracking_server:${MLFLOW_TRACKING_SERVER_PORT}
+    working_dir: /workspace
+
+  mlflow_tracking_server:
+    image: ${REPO}:${TAG}
+    container_name: mlflow_server
+    shm_size: '2gb'
+    ports:
+      - ${MLFLOW_TRACKING_SERVER_PORT}:${MLFLOW_TRACKING_SERVER_PORT}
+    volumes:
+      - ${HOST_MLLOG_ROOT_PATH}:${MLLOG_ROOT_MOUNT_TARGET}
+    networks: 
+      - frontend
+      - backend
+    working_dir: /home
+    command: mlflow server -p ${MLFLOW_TRACKING_SERVER_PORT} -h 0.0.0.0 --backend-store-uri ${BACKEND_STORE_URI} --default-artifact-root ${DEFAULT_ARTIFACT_ROOT}
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
