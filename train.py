@@ -7,6 +7,7 @@ from tqdm import tqdm
 from modules.utils import build_transformer, MLLogger, build_lr_scheduler
 from modules.dataset import build_dataloader
 from modules.model import build_model
+from modules.loss import FocalLoss
 from sklearn.metrics import precision_recall_fscore_support
 from utils import parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs
 from functools import partial
@@ -29,7 +30,7 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
-            if isinstance(fn_cls_loss, torch.nn.CrossEntropyLoss):
+            if isinstance(fn_cls_loss, (FocalLoss,torch.nn.CrossEntropyLoss)):
                 data[key_target]=data[key_target].long()
 
         with torch.no_grad():
@@ -78,7 +79,7 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
-            if isinstance(fn_cls_loss, torch.nn.CrossEntropyLoss):
+            if isinstance(fn_cls_loss, (FocalLoss,torch.nn.CrossEntropyLoss)):
                 data[key_target]=data[key_target].long()
                 
         cls_logit = model(data['img'])
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         vis_func = partial(visualize_rotation_corrected_image,info=cfg['transform_cfg']['RandomRotation'])
         prediction_parser = parse_rotation_prediction_outputs
         key_metric = 'rot_id'
-        fn_cls_loss = torch.nn.CrossEntropyLoss()
+        fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()
     else:
         vis_func = visualize_orientation_prediction_outputs
         prediction_parser = parse_orientation_prediction_outputs

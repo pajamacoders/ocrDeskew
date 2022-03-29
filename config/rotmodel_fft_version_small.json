@@ -1,17 +1,17 @@
 {
     "task":"deskew",
-    "train_cfg":{"max_epoch":401, "validation_every_n_epoch":5},
+    "train_cfg":{"max_epoch":41, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
         "RandomOrientation":{"ratio":0.5},
-        "RandomRotation":{"ratio":0.5, "degree":89, "buckets":356},
+        "RandomRotation":{"ratio":0.4, "degree":90, "buckets":361},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
     "dataset_cfg":{
         "type":"OCRDataset",
         "train_batch":128,
-        "valid_batch":1,
+        "valid_batch":4,
         "train":{
             "dataroot":"/home/train_data_v2/train/*"
         },
@@ -21,7 +21,7 @@
     },
     "model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":356, "last_fc_in_ch":128, "pretrained":"checkpoints/deskew_model_aug_rot_180_state_dict.pth"}
+        "args":{"buckets":361, "last_fc_in_ch":128}
     },
     "optimizer_cfg":{
         "type":"Adam",
@@ -32,22 +32,22 @@
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-        "T_0":100,
+        "T_0":40,
         "eta_max":1e-3,
-        "T_up":3,
+        "T_up":2,
         "gamma":0.5,    
         "last_epoch":-1
         }
     },
     "loss_cfg":{
-        "type":"CELoss"
+        "type":"FocalLoss"
     },
     "mllogger_cfg":
     {
         "exp_name":"ocr_deskew",
         "run_name":"resnetTest",
         "user_id": "pajamacoder",
-        "save_model_at_epoch":[300,400],
-        "version":"1.1.1"
+        "save_model_at_epoch":[20,39],
+        "version":"1.2.1"
     }
 }

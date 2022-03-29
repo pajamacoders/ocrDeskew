@@ -80,7 +80,8 @@ class RandomRotation(object):
 
     def __call__(self, inp):
         if  np.random.rand()<self.ratio:
-            deg = np.random.uniform(-self.variant, self.variant-0.1)
+            deg = np.random.uniform(-self.variant, self.variant)
+            #deg = -self.variant if np.random.rand()>0.5 else self.variant #np.random.uniform(-self.variant, self.variant)
             img = inp['img']
             h,w= img.shape
             matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
@@ -89,7 +90,7 @@ class RandomRotation(object):
             cls = 1
         else:
             deg = 0
-            cls =0
+            cls = 0
         if self.buckets:
             rad = np.deg2rad(deg)
             range_rad = np.deg2rad(self.variant)
