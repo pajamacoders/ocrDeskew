@@ -74,7 +74,7 @@ if __name__ == "__main__":
     with open(args.orientation_config, 'r') as f:
         orientation_cfg = json.load(f)
     
-    tr = build_transformer(orientation_cfg['transform_cfg'])
+    tr = build_transformer(cfg['transform_cfg'])
     logger.info('create model')
     deskew_model = build_model(**cfg['model_cfg'])
     orientation_model = build_model(**orientation_cfg['model_cfg'])
@@ -100,8 +100,8 @@ if __name__ == "__main__":
         out = deskew_model(data['img'].cuda())
 
         rot_id = torch.argmax(torch.softmax(out,-1),-1)
-        rad_range = np.deg2rad(89) #89 와 356 은 모델 training 시에 사용된 constant
-        rotation = rot_id*rad_range*2/356-rad_range
+        rad_range = np.deg2rad(90) #90 와 361 은 모델 training 시에 사용된 constant
+        rotation = rot_id*rad_range*2/361-rad_range
         if isinstance(rotation, torch.Tensor):
             rotation = np.rad2deg(rotation.item())
         deskew_img = ttf.rotate(data['img'], angle=-rotation)

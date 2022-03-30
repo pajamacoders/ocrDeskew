@@ -94,7 +94,7 @@ if __name__ == "__main__":
     logger.info('set mlflow tracking')
     mltracker = MLLogger(cfg, logger)
     if cfg['task']=='deskew':
-        vis_func = partial(visualize_rotation_corrected_image_compute_error,info=cfg['transform_cfg']['RandomRotation'])
+        vis_func = partial(visualize_rotation_corrected_image_compute_error,info=cfg['transform_cfg']['RandomRotationTest'])
         prediction_parser = parse_rotation_prediction_outputs
         key_metric = 'rot_id'
         fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()

@@ -81,7 +81,6 @@ class RandomRotation(object):
     def __call__(self, inp):
         if  np.random.rand()<self.ratio:
             deg = np.random.uniform(-self.variant, self.variant)
-            #deg = -self.variant if np.random.rand()>0.5 else self.variant #np.random.uniform(-self.variant, self.variant)
             img = inp['img']
             h,w= img.shape
             matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
@@ -121,4 +120,32 @@ class Shaper(object):
         return inp
 
 
-        
+
+class RandomRotationTest(object):
+    def __init__(self, ratio, degree, buckets=None):
+        self.variant = eval(degree) if isinstance(degree, str) else degree
+        self.ratio = eval(ratio) if isinstance(ratio, str) else ratio
+        self.buckets = eval(buckets) if isinstance(buckets, str) else buckets
+
+    def __call__(self, inp):
+        if  np.random.rand()<self.ratio:
+            deg = np.random.uniform(-self.variant, self.variant)
+            #deg = -self.variant if np.random.rand()>0.5 else self.variant #np.random.uniform(-self.variant, self.variant)
+            #deg = np.random.uniform(-self.variant, self.variant)
+            img = inp['img']
+            h,w= img.shape
+            matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
+            dst = cv2.warpAffine(img, matrix, (w, h),borderValue=0)
+            inp['img'] = dst
+            cls = 1
+        else:
+            deg = 0
+            cls = 0
+        if self.buckets:
+            rad = np.deg2rad(deg)
+            range_rad = np.deg2rad(90)
+            bucket = int(self.buckets * (rad+range_rad) / (2*range_rad))
+            inp['rot_id']=bucket
+        inp['cls']=cls
+        inp['degree'] = deg
+        return inp
