@@ -13,6 +13,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from utils import parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs, visualize_rotation_corrected_image_compute_error
 from functools import partial
 from modules.loss import FocalLoss
+from sklearn.metrics import classification_report
 
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
@@ -30,6 +31,7 @@ def test(model, loader, fn_cls_loss, key_target, mllogger, vis_func, prediction_
     labels = []
     preds = []
     error=[]
+
     for i, data in tqdm(enumerate(loader)):
         data['img']=data['img'].cuda(non_blocking=True).float()
         if key_target in data.keys():
@@ -51,6 +53,9 @@ def test(model, loader, fn_cls_loss, key_target, mllogger, vis_func, prediction_
         vis_func(data, cls_logit, mllogger, error=error)
 
     errors = np.array(error)
+    target_names=[str(i) for i in range(361)]
+    with open("classification_report.txt", "w") as text_file:
+        print(classification_report(labels, preds, target_names=target_names,  digits=4), file=text_file)
     logger.info(f'prediction error:{np.sqrt(errors.mean()):.4f} degree, std:{np.sqrt(errors.std()):.8f}')
     avgloss =  (avg_total_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
@@ -94,7 +99,7 @@ if __name__ == "__main__":
     logger.info('set mlflow tracking')
     mltracker = MLLogger(cfg, logger)
     if cfg['task']=='deskew':
-        vis_func = partial(visualize_rotation_corrected_image_compute_error,info=cfg['transform_cfg']['RandomRotationTest'])
+        vis_func = partial(visualize_rotation_corrected_image_compute_error,info=cfg['transform_cfg']['RandomRotation'])
         prediction_parser = parse_rotation_prediction_outputs
         key_metric = 'rot_id'
         fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()

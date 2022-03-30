@@ -1,17 +1,17 @@
 {
     "task":"orientaion_prediction",
-    "train_cfg":{"max_epoch":801, "validation_every_n_epoch":5},
+    "train_cfg":{"max_epoch":81, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-        "RandomOrientation":{"ratio":0.5},
-        "RandomRotation":{"ratio":0.5, "degree":3, "buckets":10},
+        "RandomDirection":{"ratio":1, "directions":[-90,0,90,180]},
+        "RandomRotation":{"ratio":0.5, "degree":3, "buckets":13},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
     "dataset_cfg":{
         "type":"OCRDataset",
         "train_batch":32,
-        "valid_batch":4,
+        "valid_batch":16,
         "train":{
             "dataroot":"/home/train_data_v2/train/*"
         },
@@ -25,9 +25,8 @@
             "image_size":[512,512],
             "dims":[64, 80, 96],
             "channels":[16, 16, 24, 24, 48, 48, 64, 64, 80, 80, 320],
-            "num_classes":1,
-            "expansion":2,
-            "pretrained":"checkpoints/upside_down_v1.0.pth"
+            "num_classes":4,
+            "expansion":2
         }
     },
     "optimizer_cfg":{
@@ -39,7 +38,7 @@
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-            "T_0":200,
+            "T_0":40,
             "eta_max":1e-4,
             "T_up":3,
             "gamma":0.5,    
@@ -47,13 +46,13 @@
             }
     },
     "loss_cfg":{
-        "type":"BCEWithLogitLoss"
+        "type":"focal_loss"
     },
     "mllogger_cfg":
-    {"exp_name":"ocr_orientation_prediction",
-        "run_name":"RotationNetTest",
+    {"exp_name":"ocr_direction_prediction",
+        "run_name":"DirectionPrediction",
         "user_id": "pajama",
-        "save_model_at_epoch":[400,600,700],
-        "version":"1.1.0"
+        "save_model_at_epoch":[40,80],
+        "version":"1.3.0"
     }
 }

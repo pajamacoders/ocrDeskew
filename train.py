@@ -9,7 +9,7 @@ from modules.dataset import build_dataloader
 from modules.model import build_model
 from modules.loss import FocalLoss
 from sklearn.metrics import precision_recall_fscore_support
-from utils import parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs
+from utils import * #parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs
 from functools import partial
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
@@ -46,7 +46,7 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
 
     avgloss =  (avg_total_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
-    
+
     mllogger.log_metric('valid_loss',avgloss, step)
     mllogger.log_metric('valid_cls_loss',stat_cls_loss, step)
     log_msg = f'valid-{step} epoch: cls_loss:{stat_cls_loss:.4f}'
@@ -149,12 +149,12 @@ if __name__ == "__main__":
         vis_func = partial(visualize_rotation_corrected_image,info=cfg['transform_cfg']['RandomRotation'])
         prediction_parser = parse_rotation_prediction_outputs
         key_metric = 'rot_id'
-        fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()
+        fn_cls_loss = FocalLoss(None,2.0) if cfg["loss_cfg"]["type"]=="focal_loss" else torch.nn.CrossEntropyLoss()
     else:
-        vis_func = visualize_orientation_prediction_outputs
-        prediction_parser = parse_orientation_prediction_outputs
-        key_metric = 'flip'
-        fn_cls_loss = torch.nn.BCEWithLogitsLoss()      
+        vis_func = partial(visualize_direction_prediction_outputs,directions=cfg['transform_cfg']['RandomDirection']['directions'])
+        prediction_parser = parse_direction_prediction_outputs
+        key_metric = 'direction'
+        fn_cls_loss = FocalLoss(None,2.0) if cfg["loss_cfg"]["type"]=="focal_loss" else torch.nn.BCEWithLogitsLoss()      
     
     for step in range(max_epoch):
         train(model, train_loader, fn_cls_loss, key_metric, opt, mltracker, step, prediction_parser)

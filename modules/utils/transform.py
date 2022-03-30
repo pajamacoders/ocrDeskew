@@ -71,6 +71,22 @@ class RandomOrientation(object):
         inp['flip']=flip
         return inp
             
+class RandomDirection(object):
+    def __init__(self, ratio, directions=[-90,0,90,180]):
+        self.ratio=ratio
+        self.directions=directions
+    
+    def __call__(self, inp):
+        img = inp['img']
+        if np.random.rand()<self.ratio:
+            cls = np.random.randint(len(self.directions))
+            h,w= img.shape
+            matrix = cv2.getRotationMatrix2D((w/2, h/2), self.directions[cls], 1)
+            img = cv2.warpAffine(img, matrix, (w, h),borderValue=0)
+        inp['img']=img
+        inp['direction']=cls
+        return inp
+            
 
 class RandomRotation(object):
     def __init__(self, ratio, degree, buckets=None):
