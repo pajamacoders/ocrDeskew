@@ -4,7 +4,7 @@
     "transform_cfg":{
         "Resize":{"scale":4},
         "RandomOrientation":{"ratio":0.5},
-        "RandomRotation":{"ratio":0.5, "degree":90, "buckets":361},
+        "RandomRotation":{"ratio":0.5, "degree":90, "buckets":356},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
@@ -21,7 +21,7 @@
     },
     "model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":361, "last_fc_in_ch":128, "pretrained":"checkpoints/range_90_v2.pth"}
+        "args":{"buckets":356, "last_fc_in_ch":128, "pretrained":"checkpoints/deskew_model_aug_rot_180_state_dict.pth"}
     },
     "optimizer_cfg":{
         "type":"Adam",

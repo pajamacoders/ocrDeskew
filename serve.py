@@ -100,8 +100,8 @@ if __name__ == "__main__":
         out = deskew_model(data['img'].cuda())
 
         rot_id = torch.argmax(torch.softmax(out,-1),-1)
-        rad_range = np.deg2rad(90) #90 와 361 은 모델 training 시에 사용된 constant
-        rotation = rot_id*rad_range*2/361-rad_range
+        rad_range = np.deg2rad(cfg['transform_cfg']['RandomRotation']['degree']) 
+        rotation = rot_id*rad_range*2/cfg['transform_cfg']['RandomRotation']['buckets']-rad_range
         if isinstance(rotation, torch.Tensor):
             rotation = np.rad2deg(rotation.item())
         deskew_img = ttf.rotate(data['img'], angle=-rotation)
