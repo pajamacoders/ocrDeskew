@@ -10,7 +10,7 @@ from modules.utils import build_transformer, MLLogger
 from modules.dataset import build_dataloader
 from modules.model import build_model
 from sklearn.metrics import precision_recall_fscore_support
-from utils import parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs, visualize_rotation_corrected_image_compute_error
+from utils import * #parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs, visualize_rotation_corrected_image_compute_error
 from functools import partial
 from modules.loss import FocalLoss
 from sklearn.metrics import classification_report
@@ -31,32 +31,32 @@ def test(model, loader, fn_cls_loss, key_target, mllogger, vis_func, prediction_
     labels = []
     preds = []
     error=[]
+    for j in range(5):
+        for i, data in tqdm(enumerate(loader)):
+            data['img']=data['img'].cuda(non_blocking=True).float()
+            if key_target in data.keys():
+                labels += data[key_target].tolist()
+                data[key_target] = data[key_target].cuda(non_blocking=True).float()
+                if isinstance(fn_cls_loss, (FocalLoss,torch.nn.CrossEntropyLoss)):
+                    data[key_target] = data[key_target].long()
 
-    for i, data in tqdm(enumerate(loader)):
-        data['img']=data['img'].cuda(non_blocking=True).float()
-        if key_target in data.keys():
-            labels += data[key_target].tolist()
-            data[key_target] = data[key_target].cuda(non_blocking=True).float()
-            if isinstance(fn_cls_loss, (FocalLoss,torch.nn.CrossEntropyLoss)):
-                data[key_target] = data[key_target].long()
+            with torch.no_grad():
+                cls_logit = model(data['img'])
+            # if not cls_logit.shape == data[key_target].shape:
+            #     cls_logit=cls_logit.reshape(data[key_target].shape)
+            cls_loss = fn_cls_loss(cls_logit, data[key_target])
+            total_loss = cls_loss
+            avg_total_loss += total_loss.detach()*cls_logit.shape[0]
+            avg_cls_loss += cls_loss.detach()*cls_logit.shape[0]
+            num_samples += cls_logit.shape[0]
+            preds += prediction_parser(cls_logit).tolist()
+            vis_func(data, cls_logit, mllogger)
 
-        with torch.no_grad():
-            cls_logit = model(data['img'])
-        # if not cls_logit.shape == data[key_target].shape:
-        #     cls_logit=cls_logit.reshape(data[key_target].shape)
-        cls_loss = fn_cls_loss(cls_logit, data[key_target])
-        total_loss = cls_loss
-        avg_total_loss += total_loss.detach()*cls_logit.shape[0]
-        avg_cls_loss += cls_loss.detach()*cls_logit.shape[0]
-        num_samples += cls_logit.shape[0]
-        preds += prediction_parser(cls_logit).tolist()
-        vis_func(data, cls_logit, mllogger, error=error)
 
-    errors = np.array(error)
-    target_names=[str(i) for i in range(361)]
-    with open("classification_report.txt", "w") as text_file:
+    target_names=['-90','0','90','180']#[str(i) for i in range(361)]
+    with open("classification_report_direction_prediction.txt", "w") as text_file:
         print(classification_report(labels, preds, target_names=target_names,  digits=4), file=text_file)
-    logger.info(f'prediction error:{np.sqrt(errors.mean()):.4f} degree, std:{np.sqrt(errors.std()):.8f}')
+
     avgloss =  (avg_total_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
     precision, recall, f1_score, support = precision_recall_fscore_support(labels, preds, average='macro')
@@ -104,10 +104,10 @@ if __name__ == "__main__":
         key_metric = 'rot_id'
         fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()
     else:
-        vis_func = visualize_orientation_prediction_outputs
-        prediction_parser = parse_orientation_prediction_outputs
-        key_metric = 'flip'
-        fn_cls_loss = torch.nn.BCEWithLogitsLoss()
+        vis_func = partial(visualize_direction_prediction_outputs,directions=cfg['transform_cfg']['RandomDirection']['directions'])#visualize_orientation_prediction_outputs
+        prediction_parser = parse_direction_prediction_outputs
+        key_metric = 'direction' #'flip'
+        fn_cls_loss = FocalLoss(None,2.0) if cfg["loss_cfg"]["type"]=="focal_loss" else torch.nn.BCEWithLogitsLoss()
 
     test(model, valid_loader, fn_cls_loss, key_metric, mltracker, vis_func, prediction_parser)
        

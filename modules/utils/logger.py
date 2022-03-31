@@ -31,7 +31,10 @@ class MLLogger:
 
     def log_image(self, img, name):
         # numpy image numby uint8 dtype
-        mlflow.log_image(img, artifact_file=f'test/{name}')
+        try:
+            mlflow.log_image(img, artifact_file=f'test/{name}')
+        except OSError:
+            pass
 
     def load_state_dict(self, path):
         pass

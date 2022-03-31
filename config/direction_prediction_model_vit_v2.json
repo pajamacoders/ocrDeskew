@@ -3,8 +3,8 @@
     "train_cfg":{"max_epoch":81, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"scale":4},
-        "RandomDirection":{"ratio":1, "directions":[-90,0,90,180]},
-        "RandomRotation":{"ratio":0.5, "degree":3, "buckets":13},
+        "RandomDirection":{"ratio":0.5, "directions":[-90,0,90,180]},
+        "RandomRotation":{"ratio":0.5, "degree":3, "buckets":6},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
     },
@@ -26,7 +26,8 @@
             "dims":[64, 80, 96],
             "channels":[16, 16, 24, 24, 48, 48, 64, 64, 80, 80, 320],
             "num_classes":4,
-            "expansion":2
+            "expansion":2,
+            "pretrained":".checkpoints/direction_prediction_model_v2.pth"
         }
     },
     "optimizer_cfg":{

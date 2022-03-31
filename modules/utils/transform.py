@@ -78,6 +78,7 @@ class RandomDirection(object):
     
     def __call__(self, inp):
         img = inp['img']
+        cls=1
         if np.random.rand()<self.ratio:
             cls = np.random.randint(len(self.directions))
             h,w= img.shape

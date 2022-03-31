@@ -75,18 +75,31 @@ model config file: config/rotmodel_fft_version_small_range_90.json
 테스트시 위 모델 다운 받고 'config/rotmodel_fft_version_small_range_90.json' 의 model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의 
 path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정.
 
-## 상하 반전 보정 모델 체크 포인트
+## 방향 보정 모델 체크 포인트[-90,0,90,180 도 회전 된 이미지의 방향을 예측 하는 모델]
 1. [upside_down_mobilevit_v1.0](https://drive.google.com/file/d/1ecFc8iMWZl4H3a4NTsLeKKvng6a8jubK/view?usp=sharing)
-tag:
+
 설명: 상하 반전된 문서를 보정하기 위한 네트워크의 체크 포인트
 
 데이터셋: aihub 데이터셋을 상하 반전 및 -5~5degree 사이에서 회전시켜 학습 시킴
 
-테스트 결과:테스트 데이터셋 기준(이미지 약 3600장)
+테스트 결과:테스트 데이터셋 기준(이미지 약 3700장)
 
 cls_loss:0.041, precision: 0.992, recall: 0.992, f1 score0.992
 
 model config file: config/upside_down_vit.json
+
+2. [direction_prediction_model_v2.pth](https://drive.google.com/file/d/1oO6zCR1POSW7pkScmb5t5cVqar-U2LEg/view?usp=sharing)
+
+설명: -90도, 0도, 90도, 180도 방향전환 된 문서를 보정하기 위한 네트워크의 체크 포인트
+
+데이터셋: aihub 데이터셋의 이미지를 -90도,0도, 90도, 180도 회전 및 -3~3degree 사이에서 회전시켜 학습 시킴
+
+테스트 결과:테스트 데이터셋 기준(이미지 약 3700장)
+
+cls_loss:0.041, precision: 0.977, recall: 0.977, f1 score: 0.977
+
+model config file: config/direction_prediction_model_vit_v2.json
+
 
 
 ## serve file 사용 방법
@@ -100,8 +113,8 @@ model config file: config/upside_down_vit.json
     }
 ```
 
-3. 상하 반전 보정 모델 체크 포인트 upside_down_mobilevit_v1.0를 .checkpoints/에 다운로드
-4. 상하 반전 보정 모델의 model config 파일(config/upside_down_vit.json)의  model_cfg->args에 pretrained 파라미터 추가
+3. 상하 반전 보정 모델 체크 포인트 direction_prediction_model_vit_v2.json 를 .checkpoints/에 다운로드
+4. 상하 반전 보정 모델의 model config 파일(config/direction_prediction_model_vit_v2.json )의  model_cfg->args에 pretrained 파라미터 추가
 ```
   ->  "model_cfg":{
         "type":"MobileViT",
@@ -111,13 +124,13 @@ model config file: config/upside_down_vit.json
             "channels":[16, 16, 24, 24, 48, 48, 64, 64, 80, 80, 320],
             "num_classes":1,
             "expansion":2,
-            "pretrained":"checkpoints/upside_down_v1.0.pth"
+            "pretrained":"checkpoints/direction_prediction_model_vit_v2.json"
         }
     }
 ```
 5. 실행
 ```bash
-python3 serve.py --deskew_config config/rotmodel_fft_version_small_range_90.json --orientation_config config/upside_down_vit.json --run_name your_run_name
+python3 serve.py --deskew_config config/rotmodel_fft_version_small_range_90.json --orientation_config config/direction_prediction_model_vit_v2.json --run_name your_run_name
 ```
 
 ## run tracking ui
