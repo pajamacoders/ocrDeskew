@@ -8,19 +8,20 @@ docker run -it --gpus all -p 0.0.0.0:5000:5000 -v /path/to/project:/code -v /pat
 ```
 
 ## run command
-train:
+
+train 예시:
 ```bash
 python3 train.py --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
 ```
 
-test:
+test 예시: 
 ```bash
 python3 test.py --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
 ```
 
-serve:
+serve 예시:
 ```bash
-python3 serve.py --deskew_config config/rotmodel_fft_version_small.json --orientation_config config/upside_down_vit.json --run_name {RUN_NAME_YOU_WANT} 
+python3 serve.py --deskew_config config/rotmodel_fft_version_small_range_90.json --orientation_config config/direction_prediction_model_vit_v2.json  --run_name {RUN_NAME_YOU_WANT} 
 ```
 
 
