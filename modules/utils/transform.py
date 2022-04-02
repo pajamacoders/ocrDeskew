@@ -123,13 +123,13 @@ class RandomCropAndPad(object):
         else:
             pass
         
-        if h>= self.target_h and w>= self.target_w:
+        if h> self.target_h and w> self.target_w:
             i, j = np.random.randint(h-self.target_h), np.random.randint(w-self.target_w)
             crop = img[i:i+self.target_h, j:j+self.target_w]
-        elif h>= self.target_h and w < self.target_w:
+        elif h> self.target_h and w <= self.target_w:
             i = np.random.randint(h-self.target_h)
             crop = img[i:i+self.target_h]
-        elif h< self.target_h and w >= self.target_w:
+        elif h<= self.target_h and w > self.target_w:
             j = np.random.randint(w-self.target_w)
             crop = img[:,j:j+self.target_w]
         else:

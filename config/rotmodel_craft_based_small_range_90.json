@@ -12,7 +12,7 @@
     "dataset_cfg":{
         "type":"OCRDataset3ch",
         "train_batch":32,
-        "valid_batch":4,
+        "valid_batch":8,
         "train":{
             "dataroot":"/train_data/train/*"
         },
