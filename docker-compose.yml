@@ -7,7 +7,7 @@ services:
     image: ${REPO}:${TAG}
     runtime: nvidia
     container_name: pajama_ocr
-    shm_size: '4gb'
+    shm_size: '32gb'
     stdin_open: true # docker run -i
     tty: true #docker run -t
     networks: 

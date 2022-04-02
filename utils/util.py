@@ -3,6 +3,21 @@ import torch
 import numpy as np
 import cv2
 
+def denormalizeMeanVariance(in_img, mean=(0.485, 0.456, 0.406), variance=(0.229, 0.224, 0.225)):
+    # should be RGB order
+    img = in_img.copy()
+    img *= variance
+    img += mean
+    img *= 255.0
+    img = np.clip(img, 0, 255).astype(np.uint8)
+    return img
+
+def cvt2HeatmapImg(img):
+    img = (np.clip(img, 0, 1) * 255).astype(np.uint8)
+    img = cv2.applyColorMap(img, cv2.COLORMAP_JET)
+    return img
+
+
 def parse_orientation_prediction_outputs(cls_logit):
     return (torch.sigmoid(cls_logit)>0.5).int()
 
@@ -15,18 +30,29 @@ def visualize_rotation_corrected_image(data, logit, logger, info, step=None):
     for ind in inds:
         mean, std = data['mean'][ind], data['std'][ind]
         img = data['img'][ind].squeeze()
-        img = img*std+mean
-        img = img.data.cpu().numpy().copy().astype(np.uint8)
+        if len(img.shape)==3:
+            img = img.permute(1,2,0)
+        img = img.cpu()*std+mean
+        img = img.data.numpy().copy().astype(np.uint8)
         rot_id = torch.argmax(torch.softmax(logit,-1),-1)[ind]
         rad_range = np.deg2rad(info['degree'])
         gt_deg = data['degree'][ind].item()
         rotation = rot_id*rad_range*2/info['buckets']-rad_range
         if isinstance(rotation, torch.Tensor):
             rotation = np.rad2deg(rotation.item())
-        h,w = img.shape
+        if len(img.shape)==3:
+            h,w,c = img.shape
+        else:
+            h,w = img.shape
         m = cv2.getRotationMatrix2D((w/2, h/2), -rotation, 1)
         dst = cv2.warpAffine(img, m, (w,h))
-        resimg=cv2.hconcat([img, dst])
+        if 'text_score' in data.keys():
+            mask = data['text_score'][ind].cpu().numpy().copy()
+            mask = cvt2HeatmapImg(mask)
+            mask=cv2.resize(mask,(w,h), interpolation=cv2.INTER_LINEAR)
+            resimg=cv2.hconcat([img, dst, mask])
+        else:
+            resimg=cv2.hconcat([img, dst])
 
         name = os.path.basename(data['imgpath'][ind])
         save_name = f'pred_{rotation:.2f}_gt_{gt_deg:.2f}_{name}'
@@ -82,4 +108,4 @@ def visualize_rotation_corrected_image_compute_error(data, logit, logger, info, 
             save_name=f'ep_{step}_sample_'+save_name
         logger.log_image(resimg, name=save_name)
 
-   
+
