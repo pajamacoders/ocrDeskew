@@ -11,12 +11,13 @@ from modules.loss import FocalLoss
 from sklearn.metrics import precision_recall_fscore_support
 from utils import * #parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs
 from functools import partial
+import torchvision
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
 stream_handler = logging.StreamHandler()
 logger.addHandler(stream_handler)
 minloss = 999
-
+blur = torchvision.transforms.GaussianBlur(7, sigma=(3.0, 3.0))
 def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, prediction_parser=None, craft=None):
     global minloss
     model.eval()
@@ -37,8 +38,10 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
             in_img = data['img']
             if craft:
                 y,feature = craft(in_img)
-                data['text_score']=y[:,:,:,0]
-                in_img = y[:,:,:,0].unsqueeze(1)
+                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(768,768), mode='bilinear')
+                mask=(blur(mask)>0.3).float()
+                data['text_score']=mask
+                in_img = in_img*mask
             cls_logit = model(in_img)
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
@@ -90,7 +93,9 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
         if craft:
             with torch.no_grad():
                 y,feature = craft(in_img)
-                in_img = y[:,:,:,0].unsqueeze(1)
+                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(768,768), mode='bilinear')
+                mask=(blur(mask)>0.3).float()
+                in_img = in_img*mask
                 #score_text = y[0,:,:,0].cpu().data.numpy()
                 #ret_score_text = cvt2HeatmapImg(score_text)
                 #cv2.imwrite(f'./samples/{i}.jpg',ret_score_text )

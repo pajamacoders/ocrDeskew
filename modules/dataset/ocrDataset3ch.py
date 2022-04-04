@@ -23,6 +23,8 @@ class OCRDataset3ch(Dataset):
         img = cv2.imread(self.img_pathes[index])
         if len(img.shape) == 2: 
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        else:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if img.shape[2] == 4:   
             img = img[:,:,:3]
         res_dict = {'img':img, 'imgpath':self.img_pathes[index]}

@@ -47,7 +47,7 @@ def visualize_rotation_corrected_image(data, logit, logger, info, step=None):
         m = cv2.getRotationMatrix2D((w/2, h/2), -rotation, 1)
         dst = cv2.warpAffine(img, m, (w,h))
         if 'text_score' in data.keys():
-            mask = data['text_score'][ind].cpu().numpy().copy()
+            mask = data['text_score'][ind].squeeze().cpu().numpy().copy()
             mask = cvt2HeatmapImg(mask)
             mask=cv2.resize(mask,(w,h), interpolation=cv2.INTER_LINEAR)
             resimg=cv2.hconcat([img, dst, mask])
