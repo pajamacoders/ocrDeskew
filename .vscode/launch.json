@@ -1,0 +1,56 @@
+{
+    // IntelliSense를 사용하여 가능한 특성에 대해 알아보세요.
+    // 기존 특성에 대한 설명을 보려면 가리킵니다.
+    // 자세한 내용을 보려면 https://go.microsoft.com/fwlink/?linkid=830387을(를) 방문하세요.
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "train",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args":["--config", "config/rotmodel_fft_version_mid_range_90.json","--run_name", "DirectionPrediction"]
+        },
+        {
+            "name": "test",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args":["--config", "config/rotmodel_fft_version_mid_range_90.json","--run_name", "result_test_rotation_correction_random_line_erasing"]
+        },
+        {
+            "name": "serve_test",
+            "type": "python",
+            "request": "launch",
+            "program": "serve_test.py",
+            "console": "integratedTerminal",
+            "args":["--deskew_config", "config/rotmodel_craft_based_small_range_90_512x512_valid.json", "--run_name", "craft_score_x_in_img"]
+        },
+        {
+            "name": "craft",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "train_craft",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args":["--config", "config/rotmodel_craft_based_small_range_90_640x640.json","--run_name", "augmentation_enhance_and_large_img_size_craft_base"]
+        },
+        {
+            "name": "pipeline_test",
+            "type": "python",
+            "request": "launch",
+            "program": "pipeline_test.py",
+            "console": "integratedTerminal",
+            "args":["--config", "config/rotmodel_craft_based_small_range_90_512x512_valid.json"]
+        },
+
+    ]
+}

@@ -12,7 +12,8 @@ transfactory={
     'Shaper':Shaper,
     'RandomRotationTest':RandomRotationTest,
     'RandomLineErasing':RandomLineErasing,
-    'NormalizeMeanStd':NormalizeMeanStd
+    'NormalizeMeanStd':NormalizeMeanStd,
+    'GrayScaleAndResize':GrayScaleAndResize
 }
 
 lr_scheduler_factory={

@@ -27,8 +27,11 @@ class ResizeAspectRatio(object):
             img = cv2.resize(img,(int(model_height*ratio),model_height),interpolation=Image.ANTIALIAS)
         '''
         target_h, target_w = int(height * ratio), int(width * ratio)
-        proc = cv2.resize(img, (target_w, target_h), interpolation = cv2.INTER_LINEAR)
-
+        self.k = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+        img = cv2.dilate(img, self.k)
+        proc = cv2.resize(img, (target_w, target_h), interpolation =  cv2.INTER_AREA)
+        inp['org_height'] = target_h
+        inp['org_width'] = target_w
 
         # make canvas and paste image
         target_h32, target_w32 = target_h, target_w
@@ -36,7 +39,7 @@ class ResizeAspectRatio(object):
             target_h32 = target_h + (32 - target_h % 32)
         if target_w % 32 != 0:
             target_w32 = target_w + (32 - target_w % 32)
-        resized = np.zeros((target_h32, target_w32, channel), dtype=np.float32)
+        resized = np.zeros((target_h32, target_w32, channel), dtype=np.float32)*255.0
         resized[0:target_h, 0:target_w, :] = proc
         target_h, target_w = target_h32, target_w32
 
@@ -44,6 +47,7 @@ class ResizeAspectRatio(object):
         inp['img'] = resized
         inp['size_heatmap']=size_heatmap
         inp['resize_ratio'] = ratio
+        
         return inp
 
     def calculate_ratio(self, width, height):
@@ -98,54 +102,55 @@ class RandomLineErasing(object):
             h_offset = np.random.randint(h//2)
             num_line = (h-h_offset)//line_width
             for i in range(num_line):
-                img[(h_offset+i*line_width):(h_offset+(i+1)*line_width), np.random.randint(w-100):]=255
+                img[(h_offset+i*line_width):(h_offset+(i+1)*line_width), np.random.randint(w-100):]=0
             inp['img']=img
         return inp
         
 
-
-
 class RandomCropAndPad(object):
-    def __init__(self, size=(768,768)):
+    def __init__(self, ratio=0.5, size=(768,768)):
         if isinstance(size, str):
             size=eval(size)
         assert len(size)<=2, 'size must be a tuple of int or just a int'
         assert isinstance(size, int) or (isinstance(size[0], int) and isinstance(size[1],int)), 'element must be type of int'
         self.target_h=size[0]
         self.target_w=size[1]
+        self.ratio=ratio
     
     def __call__(self, inp):
         img = inp['img']
-        if len(img.shape)==2:
-            h,w= img.shape
-        elif len(img.shape)==3:
-            h,w,c = img.shape
-        else:
-            pass
-        
-        if h> self.target_h and w> self.target_w:
-            i, j = np.random.randint(h-self.target_h), np.random.randint(w-self.target_w)
-            crop = img[i:i+self.target_h, j:j+self.target_w]
-        elif h> self.target_h and w <= self.target_w:
-            i = np.random.randint(h-self.target_h)
-            crop = img[i:i+self.target_h]
-        elif h<= self.target_h and w > self.target_w:
-            j = np.random.randint(w-self.target_w)
-            crop = img[:,j:j+self.target_w]
-        else:
-            crop = img
+        if np.random.rand()<0.5:
+            if len(img.shape)==2:
+                h,w= img.shape
+            elif len(img.shape)==3:
+                h,w,c = img.shape
+            else:
+                pass
+            
+            if h> self.target_h and w> self.target_w:
+                i, j = np.random.randint(h-self.target_h), np.random.randint(w-self.target_w)
+                crop = img[i:i+self.target_h, j:j+self.target_w]
+            elif h> self.target_h and w <= self.target_w:
+                i = np.random.randint(h-self.target_h)
+                crop = img[i:i+self.target_h]
+            elif h<= self.target_h and w > self.target_w:
+                j = np.random.randint(w-self.target_w)
+                crop = img[:,j:j+self.target_w]
+            else:
+                crop = img
 
-        img = self.pad_right(crop)
-        inp['img']=img
+            img = self.pad_right(crop)
+            inp['img']=img
         return inp
 
     def pad_right(self, crop):
+        scale = np.random.randint(128,256) if np.random.rand()<0.5 else 0
         if len(crop.shape)==2:
             h,w = crop.shape
-            padded_img = np.zeros((self.target_h, self.target_w),dtype=np.float32)
+            padded_img = np.ones((self.target_h, self.target_w),dtype=np.float32)*scale
         elif len(crop.shape)==3:
             h,w,c = crop.shape
-            padded_img = np.zeros((self.target_h, self.target_w,c), dtype=np.float32)
+            padded_img = np.ones((self.target_h, self.target_w,c), dtype=np.float32)*scale
 
         else:
             pass
@@ -153,6 +158,33 @@ class RandomCropAndPad(object):
 
         return padded_img
 
+class GrayScaleAndResize(object):
+    def __init__(self, target_size=512):
+        self.target_size = target_size
+        self.k = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+
+    def __call__(self, inp):
+        img = inp['img']
+        if len(img.shape)==3:
+            h,w,c = img.shape
+        else: 
+            h,w = img.shape
+        r = self.target_size/max(h,w)
+        target_h, target_w = int(h*r), int(w*r)
+        #color image resize
+        img = cv2.resize(img, (target_w,target_h),interpolation = cv2.INTER_AREA)
+        scale = np.random.randint(128,256) if np.random.rand()<0.5 else 0
+        color = np.ones((self.target_size, self.target_size,c), dtype=np.float32)*scale
+        color[:target_h, :target_w]=img
+        inp['img']=color
+        # gray image
+        tmp_img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        tmp = cv2.resize(tmp_img, (target_w,target_h),interpolation = cv2.INTER_AREA)
+
+        gray = np.ones((self.target_size, self.target_size), dtype=np.float32)*scale
+        gray[:target_h, :target_w]=tmp
+        inp['gray']=gray/255.0
+        return inp
         
 class RandomOrientation(object):
     def __init__(self, ratio):
@@ -192,7 +224,8 @@ class RandomRotation(object):
             else:
                 pass
             matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
-            dst = cv2.warpAffine(img, matrix, (w, h),borderValue=0)
+            border = np.random.randint(128,256)
+            dst = cv2.warpAffine(img, matrix, (w, h),borderValue = (border,border,border) if np.random.rand()<0.5 else (0,0,0))
             inp['img'] = dst
             cls = 1
         else:
@@ -240,6 +273,11 @@ class Shaper(object):
         if len(img.shape) <3:
             img=np.expand_dims(img, -1)
         inp['img'] = img.transpose(2,0,1)
+
+        if 'gray' in inp.keys():
+            gray = inp['gray']
+            gray=np.expand_dims(gray, -1) 
+            inp['gray']=gray.transpose(2,0,1)
         return inp
 
 class RandomRotationTest(object):

@@ -17,7 +17,7 @@ class OCRDataset3ch(Dataset):
         self.transformer=tr
 
     def __len__(self):
-        return self.length
+        return 256#self.length
     
     def __getitem__(self, index: uint64):
         img = cv2.imread(self.img_pathes[index])
@@ -27,7 +27,7 @@ class OCRDataset3ch(Dataset):
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if img.shape[2] == 4:   
             img = img[:,:,:3]
-        res_dict = {'img':img, 'imgpath':self.img_pathes[index]}
+        res_dict = {'img':255-img, 'imgpath':self.img_pathes[index]}
       
         if self.transformer:
             res_dict = self.transformer(res_dict)

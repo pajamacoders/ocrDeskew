@@ -25,8 +25,20 @@ if __name__ == "__main__":
     train_dataset = OCRDataset3ch(**cfg['dataset_cfg']['valid'], transformer=tr)
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=16)
-    for data in tqdm(train_loader):
-        #data = train_dataset.__getitem__(np.random.randint(len(train_dataset)))
-        print(data['img'].shape)
-        #cv2.imwrite(f'./samples/{i}.jpg',data['img'].astype(np.uint8))
-        
+ 
+    if 0:
+        i=0
+        for data in tqdm(train_loader):
+            #data = train_dataset.__getitem__(np.random.randint(len(train_dataset)))
+            print(data['img'].shape)
+            cv2.imwrite(f'./samples/{i}.jpg',data['gray'].astype(np.uint8))
+            i+=0
+    else:
+         for i in tqdm(range(len(train_dataset))):
+            data = train_dataset.__getitem__(np.random.randint(len(train_dataset)))
+            #cv2.imwrite(f'./samples/{i}.jpg',data['gray'].astype(np.uint8))
+            color = data['img']
+            gray = data['gray']
+            print(f"color:{color.shape}, gray:{gray.shape}")
+           
+    

@@ -18,7 +18,7 @@ stream_handler = logging.StreamHandler()
 logger.addHandler(stream_handler)
 minloss = 999
 blur = torchvision.transforms.GaussianBlur(7, sigma=(3.0, 3.0))
-def visualizer_for_single_input(data, logit, logger, deskew_deg):
+def visualizer_for_single_input(data, logit, logger, deskew_deg, prob):
     mean, std = data['mean'], data['std']
     img = data['img'].squeeze()
     if len(img.shape)==3:
@@ -40,7 +40,8 @@ def visualizer_for_single_input(data, logit, logger, deskew_deg):
         resimg=cv2.hconcat([img, dst])
     # resimg = cv2.hconcat([img, dst])
     name = os.path.basename(data['imgpath'])
-    save_name = f'pred_{rotation:.2f}_{name}'
+    gt_deg = data['degree']
+    save_name = f'pred_{prob.item():.2f}_{rotation:.2f}_gt_{gt_deg:.2f}_{name}'
     if logger:
         logger.log_image(resimg, name=save_name)
 
@@ -92,34 +93,43 @@ if __name__ == "__main__":
     mltracker = MLLogger(cfg, logger)
     root = '/train_data/valid/*' #'./test_file/*'
     imgs = glob.glob(root)
+    i=0
     for impath in tqdm(imgs):
         img = cv2.imread(impath)
         if len(img.shape) == 2: 
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         # img = 255-img
-        inp={'img':img, 'imgpath': impath}
+        inp={'img':255-img, 'imgpath': impath}
         
         data = tr(inp) # resize and change shape
         data['img'] = torch.from_numpy(data['img']).float()
+        data['gray'] = torch.from_numpy(data['gray']).float()
         if len(data['img'].shape)<4:
             data['img'] = data['img'].unsqueeze(0)
         with torch.no_grad():
-            in_img = torch.nn.functional.interpolate(data['img'].cuda(), size=(768,768), mode='bilinear')
+            in_img = data['img'].cuda()#torch.nn.functional.interpolate(data['img'].cuda(), size=(768,768), mode='bilinear')
             if craft:
                 y,feature = craft(in_img)
-                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(768,768), mode='bilinear')
-                mask=(blur(mask)>0.3).float()
+                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(512,512), mode='bilinear')
+                mask=blur(mask)
                 data['text_score']=mask
-                in_img = in_img*mask
+                if len(data['gray'])!=4:
+                    data['gray'] = data['gray'].unsqueeze(0)
+                in_img = torch.concat([data['gray'].cuda(), mask],dim=1)
+                
+                # score_text = y[0,:,:,0].cpu().data.numpy()
+                # ret_score_text = cvt2HeatmapImg(score_text)
+                # cv2.imwrite(f'./samples/{i}.jpg',ret_score_text )
+                # i+=1
             out = deskew_model(in_img)
-
-        rot_id = torch.argmax(torch.softmax(out,-1),-1)
+        prob = torch.softmax(out,-1)
+        rot_id = torch.argmax(prob,-1)
         rad_range = np.deg2rad(90) 
         rotation = rot_id*rad_range*2/360-rad_range
         if isinstance(rotation, torch.Tensor):
             rotation = np.rad2deg(rotation.item())
-        visualizer_for_single_input(data, out, mltracker, -rotation)
+        visualizer_for_single_input(data, out, mltracker, -rotation, prob[0][rot_id])
 
 
 

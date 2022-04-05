@@ -17,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 stream_handler = logging.StreamHandler()
 logger.addHandler(stream_handler)
 minloss = 999
-blur = torchvision.transforms.GaussianBlur(7, sigma=(3.0, 3.0))
+blur = torchvision.transforms.GaussianBlur(7, sigma=(4.0, 4.0))
 def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, prediction_parser=None, craft=None):
     global minloss
     model.eval()
@@ -28,6 +28,8 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
     preds = []
     for i, data in tqdm(enumerate(loader)):
         data['img']=data['img'].cuda(non_blocking=True).float()
+        if 'gray' in data.keys():
+            data['gray']=data['gray'].cuda(non_blocking=True).float()
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
@@ -38,10 +40,11 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
             in_img = data['img']
             if craft:
                 y,feature = craft(in_img)
-                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(768,768), mode='bilinear')
-                mask=(blur(mask)>0.3).float()
+                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(640,640), mode='bilinear')
+                mask=blur(mask)
+                in_img = torch.concat([data['gray'], mask],dim=1)
                 data['text_score']=mask
-                in_img = in_img*mask
+
             cls_logit = model(in_img)
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
@@ -83,6 +86,8 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
     for i, data in tqdm(enumerate(loader)):
         optimizer.zero_grad()
         data['img'] = data['img'].cuda(non_blocking=True).float()
+        if 'gray' in data.keys():
+            data['gray']=data['gray'].cuda(non_blocking=True).float()
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
@@ -93,12 +98,13 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
         if craft:
             with torch.no_grad():
                 y,feature = craft(in_img)
-                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(768,768), mode='bilinear')
-                mask=(blur(mask)>0.3).float()
-                in_img = in_img*mask
-                #score_text = y[0,:,:,0].cpu().data.numpy()
-                #ret_score_text = cvt2HeatmapImg(score_text)
-                #cv2.imwrite(f'./samples/{i}.jpg',ret_score_text )
+                mask = torch.nn.functional.interpolate(y[:,:,:,0].unsqueeze(1),size=(640,640), mode='bilinear')
+                mask=blur(mask)
+                in_img = torch.concat([data['gray'], mask],dim=1)
+                
+                score_text = y[0,:,:,0].cpu().data.numpy()
+                ret_score_text = cvt2HeatmapImg(score_text)
+                cv2.imwrite(f'./samples/{i}.jpg',ret_score_text )
         cls_logit = model(in_img)
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])

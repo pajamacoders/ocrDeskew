@@ -1,0 +1,53 @@
+{
+    "task":"deskew",
+    "train_cfg":{"max_epoch":41, "validation_every_n_epoch":5},
+    "transform_cfg":{
+        "Resize":{"scale":4},
+        "RandomLineErasing":{"ratio":0.5,"min_line_width":10, "max_line_width":30},
+        "RandomRotation":{"ratio":0.5, "degree":90, "buckets":360},
+        "Normalize":{"mean":0.0, "std":255.0},
+        "Shaper":{}
+    },
+    "dataset_cfg":{
+        "type":"OCRDataset",
+        "train_batch":256,
+        "valid_batch":4,
+        "train":{
+            "dataroot":"/train_data/train/*"
+        },
+        "valid":{
+            "dataroot":"/train_data/valid/*"
+        }
+    },
+    "model_cfg":{
+        "type":"DeskewNetV4",
+        "args":{"buckets":360, "last_fc_in_ch":256}
+    },
+    "optimizer_cfg":{
+        "type":"Adam",
+        "args":{
+            "lr":1e-6
+            }
+        },
+    "lr_scheduler_cfg":{
+        "type":"CosineAnnealingWarmUpRestarts",
+        "args":{
+        "T_0":40,
+        "eta_max":1e-3,
+        "T_up":2,
+        "gamma":0.5,    
+        "last_epoch":-1
+        }
+    },
+    "loss_cfg":{
+        "type":"FocalLoss"
+    },
+    "mllogger_cfg":
+    {
+        "exp_name":"ocr_deskew",
+        "run_name":"resnetTest",
+        "user_id": "pajamacoder",
+        "save_model_at_epoch":[20,39],
+        "version":"1.2.1"
+    }
+}

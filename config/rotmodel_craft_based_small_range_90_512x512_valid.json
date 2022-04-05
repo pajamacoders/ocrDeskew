@@ -1,0 +1,58 @@
+{
+    "task":"deskew",
+    "train_cfg":{"max_epoch":81, "validation_every_n_epoch":5},
+    "transform_cfg":{
+        "ResizeAspectRatio":{"square_size":1280,"mag_ratio":1.5},
+        "RandomLineErasing":{"ratio":0.5,"min_line_width":10, "max_line_width":30},
+        "RandomCropAndPad":{"ratio":0.5 ,"size":[768,768]},
+        "RandomRotation":{"ratio":0.5, "degree":90, "buckets":360},
+        "GrayScaleAndResize":{"target_size":640}
+      
+    },
+    "dataset_cfg":{
+        "type":"OCRDataset3ch",
+        "train_batch":32,
+        "valid_batch":8,
+        "train":{
+            "dataroot":"/train_data/train/*"
+        },
+        "valid":{
+            "dataroot":"/train_data/valid/*"
+        }
+    },
+    "feature_ext_model_cfg":{
+        "type": "CRAFT", 
+        "args":{"craft_pretrained":"checkpoints/craft_mlt_25k.pth"}
+    },
+    "model_cfg":{
+        "type":"DeskewNetV7",
+        "args":{"buckets":360,"last_fc_in":65536, "last_fc_in_ch":128, "pretrained":"checkpoints/20220405_craft_score_based.pth"}
+    },
+    "optimizer_cfg":{
+        "type":"Adam",
+        "args":{
+            "lr":1e-6
+            }
+        },
+    "lr_scheduler_cfg":{
+        "type":"CosineAnnealingWarmUpRestarts",
+        "args":{
+        "T_0":80,
+        "eta_max":1e-4,
+        "T_up":2,
+        "gamma":0.1,    
+        "last_epoch":-1
+        }
+    },
+    "loss_cfg":{
+        "type":"FocalLoss"
+    },
+    "mllogger_cfg":
+    {
+        "exp_name":"ocr_deskew",
+        "run_name":"resnetTest",
+        "user_id": "pajamacoder",
+        "save_model_at_epoch":[80],
+        "version":"1.2.1"
+    }
+}
