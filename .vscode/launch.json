@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args":["--config", "config/rotmodel_craft_based_small_range_90_640x640.json","--run_name", "DirectionPrediction"]
+            "args":["--config", "config/STDirNet_config.json","--run_name", "Character_based_direction_estimation"]
         },
         {
             "name": "test",
@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args":["--config", "config/rotmodel_fft_version_mid_range_90.json","--run_name", "result_test_rotation_correction_random_line_erasing"]
+            "args":["--config", "config/STDirNet_config.json","--run_name", "Character_based_direction_estimation"]
         },
         {
             "name": "serve_test",
@@ -29,10 +29,10 @@
             "args":["--deskew_config", "config/rotmodel_craft_based_small_range_90_512x512_valid.json", "--run_name", "craft_score_x_in_img"]
         },
         {
-            "name": "craft",
+            "name": "inference_direction",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "inference_direction.py",
             "console": "integratedTerminal",
         },
         {

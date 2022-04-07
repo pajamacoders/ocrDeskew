@@ -24,7 +24,7 @@ class FontDataSet(Dataset):
         self.transformer=tr
 
     def __len__(self):
-        return 30#self.length
+        return self.length
     
     def __getitem__(self, index: uint64):
         img = cv2.imread(self.img_pathes[index])

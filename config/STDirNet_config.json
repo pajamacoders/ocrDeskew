@@ -1,35 +1,29 @@
 {
     "task":"DirectionPrediction",
-    "train_cfg":{"max_epoch":100, "validation_every_n_epoch":5},
+    "train_cfg":{"max_epoch":101, "validation_every_n_epoch":5},
     "transform_cfg":{
-        
         "ResizeBySize":{"size":[40,40]},
-        "Translate":{"ratio":0.5, "tx":10, "ty":10},
+        "Translate":{"ratio":0.5, "tx":1, "ty":1},
         "GaussianNoise":{"ratio":0.5, "mean":0, "std":10},
-        "RandomDirection":{"ratio":1}
+        "RandomDirection":{"ratio":1},
+        "Normalize":{"mean":0.0, "std":255.0},
+        "Shaper":{}
 
     },
     "dataset_cfg":{
-        "type":"OCRDataset",
-        "train_batch":32,
-        "valid_batch":1,
+        "type":"FontDataSet",
+        "train_batch":2048,
+        "valid_batch":1024,
         "train":{
             "dataroot":"/font_dataset/train/*"
         },
         "valid":{
-            "dataroot":"/font_dataset/train/*"
+            "dataroot":"/font_dataset/valid/*"
         }
     },
     "model_cfg":{
-        "type":"MobileViT",
-        "args":{
-            "image_size":[512,512],
-            "dims":[64, 80, 96],
-            "channels":[16, 16, 24, 24, 48, 48, 64, 64, 80, 80, 320],
-            "num_classes":1,
-            "expansion":2,
-            "pretrained":"checkpoints/upside_down_v1.0.pth"
-        }
+        "type":"STDirNet",
+        "args":{}
     },
     "optimizer_cfg":{
         "type":"Adam",
@@ -40,7 +34,7 @@
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-            "T_0":200,
+            "T_0":100,
             "eta_max":1e-4,
             "T_up":3,
             "gamma":0.5,    
@@ -48,13 +42,13 @@
             }
     },
     "loss_cfg":{
-        "type":"BCEWithLogitLoss"
+        "type":"FocalLoss"
     },
     "mllogger_cfg":
-    {"exp_name":"ocr_orientation_prediction",
+    {"exp_name":"DirectionPrediction",
         "run_name":"RotationNetTest",
         "user_id": "pajama",
-        "save_model_at_epoch":[400,600,700],
-        "version":"1.1.0"
+        "save_model_at_epoch":[40,70,100],
+        "version":"1.5.0"
     }
 }

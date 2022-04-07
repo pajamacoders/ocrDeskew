@@ -9,7 +9,7 @@ from modules.dataset import build_dataloader
 from modules.model import build_model
 from modules.loss import FocalLoss
 from sklearn.metrics import precision_recall_fscore_support
-from utils import parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs
+from utils import visualize_Character_rotation, parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs
 from functools import partial
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
@@ -27,7 +27,7 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
     preds = []
     for i, data in tqdm(enumerate(loader)):
         data['img']=data['img'].cuda(non_blocking=True).float()
-        data['gray']=data['gray'].cuda(non_blocking=True).float()
+      
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
@@ -35,7 +35,7 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
                 data[key_target]=data[key_target].long()
 
         with torch.no_grad():
-            cls_logit = model(data['gray'])
+            cls_logit = model(data['img'])
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
         total_loss = cls_loss
@@ -76,14 +76,15 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
     for i, data in tqdm(enumerate(loader)):
         optimizer.zero_grad()
         data['img'] = data['img'].cuda(non_blocking=True).float()
-        data['gray']=data['gray'].cuda(non_blocking=True).float()
+        
+    
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
             if isinstance(fn_cls_loss, (FocalLoss,torch.nn.CrossEntropyLoss)):
                 data[key_target]=data[key_target].long()
                 
-        cls_logit = model(data['gray'])
+        cls_logit = model(data['img'])
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
         total_loss = cls_loss
@@ -152,10 +153,10 @@ if __name__ == "__main__":
         key_metric = 'rot_id'
         fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()
     else:
-        vis_func = visualize_orientation_prediction_outputs
-        prediction_parser = parse_orientation_prediction_outputs
-        key_metric = 'flip'
-        fn_cls_loss = torch.nn.BCEWithLogitsLoss()      
+        vis_func = visualize_Character_rotation #visualize_orientation_prediction_outputs
+        prediction_parser = parse_rotation_prediction_outputs #parse_orientation_prediction_outputs
+        key_metric = 'cls'
+        fn_cls_loss = FocalLoss(None,2.0)  #torch.nn.BCEWithLogitsLoss()      
     
     for step in range(max_epoch):
         train(model, train_loader, fn_cls_loss, key_metric, opt, mltracker, step, prediction_parser)

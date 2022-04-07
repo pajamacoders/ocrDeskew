@@ -16,7 +16,7 @@ class ConvBnRelu(nn.Module):
     def forward(self, x):
         return self.conv_bn_relu(x)
 class MV2Block(nn.Module):
-    def __init__(self, inp, oup, kernel_ssize=3, stride=1, expansion=4):
+    def __init__(self, inp, oup, kernel_size=3, stride=1, expansion=4):
         super().__init__()
         self.stride = stride
         assert stride in [1, 2]
@@ -27,7 +27,7 @@ class MV2Block(nn.Module):
         if expansion == 1:
             self.conv = nn.Sequential(
                 # dw
-                nn.Conv2d(hidden_dim, hidden_dim, kernel_ssize, stride, kernel_ssize//2, groups=hidden_dim, bias=False),
+                nn.Conv2d(hidden_dim, hidden_dim, kernel_size, stride, kernel_size//2, groups=hidden_dim, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.SiLU(),
                 # pw-linear
@@ -41,7 +41,7 @@ class MV2Block(nn.Module):
                 nn.BatchNorm2d(hidden_dim),
                 nn.SiLU(),
                 # dw
-                nn.Conv2d(hidden_dim, hidden_dim, kernel_ssize, stride, kernel_ssize//2, groups=hidden_dim, bias=False),
+                nn.Conv2d(hidden_dim, hidden_dim, kernel_size, stride, kernel_size//2, groups=hidden_dim, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.SiLU(),
                 # pw-linear
@@ -68,7 +68,9 @@ class STDirNet(nn.Module):
             MV2Block(32,64),
             MV2Block(64,64),
             nn.Dropout2d(0.1),
-            nn.Linear(6400, 512),
+
+        )            
+        self.fc1=nn.Sequential(nn.Linear(6400, 512),
             nn.ReLU(inplace=True),
             nn.Linear(512, 4)
         )
@@ -98,8 +100,9 @@ class STDirNet(nn.Module):
             self.load_weight(pretrained)
         else:
             self.init_weights(self.layer.modules())
-            self.init_weight(self.localization.modules())
-            self.init_weight(self.fc_loc.modules())
+            self.init_weights(self.fc1.modules())
+            self.init_weights(self.localization.modules())
+            self.init_weights(self.fc_loc.modules())
 
             # Initialize the weights/bias with identity transformation
             self.fc_loc[2].weight.data.zero_()
@@ -123,6 +126,8 @@ class STDirNet(nn.Module):
 
         # Perform the usual forward pass
         x = self.layer(x)
+        x = x.view(-1, 64*10*10)
+        x = self.fc1(x)
         return x
     
     def load_weight(self, pretrained):
@@ -138,7 +143,7 @@ class STDirNet(nn.Module):
             print(f'hit count : {hit_cnt}/{total_params} prameter loaded!') 
             self.load_state_dict(state_dict)
     
-    def init_weights(modules):
+    def init_weights(self, modules):
         for m in modules:
             if isinstance(m, nn.Conv2d):
                 nn.init.xavier_uniform_(m.weight.data)
