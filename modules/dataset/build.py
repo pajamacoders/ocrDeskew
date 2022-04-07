@@ -1,9 +1,11 @@
 from torch.utils.data import DataLoader, RandomSampler
 from .ocrDataset import OCRDataset
 from .ocrDataset3ch import OCRDataset3ch
+from .fontDataset import FontDataSet
 
 ocrFactory = {'OCRDataset':OCRDataset,
-'OCRDataset3ch':OCRDataset3ch}
+'OCRDataset3ch':OCRDataset3ch,
+'FontDataSet':FontDataSet}
 
 def build_dataloader(type, train_batch, valid_batch, train, valid, augment_fn):
     train_dataset = ocrFactory[type](**train, transformer=augment_fn)

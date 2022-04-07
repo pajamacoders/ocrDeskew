@@ -27,6 +27,7 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
     preds = []
     for i, data in tqdm(enumerate(loader)):
         data['img']=data['img'].cuda(non_blocking=True).float()
+        data['gray']=data['gray'].cuda(non_blocking=True).float()
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
@@ -34,7 +35,7 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
                 data[key_target]=data[key_target].long()
 
         with torch.no_grad():
-            cls_logit = model(data['img'])
+            cls_logit = model(data['gray'])
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
         total_loss = cls_loss
@@ -75,14 +76,14 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
     for i, data in tqdm(enumerate(loader)):
         optimizer.zero_grad()
         data['img'] = data['img'].cuda(non_blocking=True).float()
-        data['img']=data['img'].cuda(non_blocking=True).float()
+        data['gray']=data['gray'].cuda(non_blocking=True).float()
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
             if isinstance(fn_cls_loss, (FocalLoss,torch.nn.CrossEntropyLoss)):
                 data[key_target]=data[key_target].long()
                 
-        cls_logit = model(data['img'])
+        cls_logit = model(data['gray'])
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
         total_loss = cls_loss

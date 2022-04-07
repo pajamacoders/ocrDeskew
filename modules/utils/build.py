@@ -10,10 +10,14 @@ transfactory={
     'RandomRotation':RandomRotation,
     'RandomOrientation':RandomOrientation,
     'Shaper':Shaper,
-    'RandomRotationTest':RandomRotationTest,
     'RandomLineErasing':RandomLineErasing,
     'NormalizeMeanStd':NormalizeMeanStd,
-    'GrayScaleAndResize':GrayScaleAndResize
+    'GrayScaleAndResize':GrayScaleAndResize,
+    'ResizeBySize':ResizeBySize,
+    'GaussianNoise':GaussianNoise,
+    'RandomDirection':RandomDirection,
+    'Translate':Translate,
+
 }
 
 lr_scheduler_factory={

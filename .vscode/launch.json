@@ -8,9 +8,9 @@
             "name": "train",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "train.py",
             "console": "integratedTerminal",
-            "args":["--config", "config/rotmodel_fft_version_mid_range_90.json","--run_name", "DirectionPrediction"]
+            "args":["--config", "config/rotmodel_craft_based_small_range_90_640x640.json","--run_name", "DirectionPrediction"]
         },
         {
             "name": "test",
@@ -49,7 +49,7 @@
             "request": "launch",
             "program": "pipeline_test.py",
             "console": "integratedTerminal",
-            "args":["--config", "config/rotmodel_craft_based_small_range_90_512x512_valid.json"]
+            "args":["--config", "config/STDirNet_config.json"]
         },
 
     ]

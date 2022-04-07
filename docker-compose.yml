@@ -17,6 +17,7 @@ services:
       - ${DATA_PATH_ON_HOST}:${DATA_PATH_ON_CONTAINER}
       - ${HOST_MLLOG_ROOT_PATH}:${MLLOG_ROOT_MOUNT_TARGET}
       - ${HOST_HOME}:${CONTAINER_HOME}
+      - ${HOST_FONT_DATA_SET}:${CONTAINER_FONT_DATA_SET}
     ports:
       - ${TRAINER_PORT}:${TRAINER_PORT}
     environment:

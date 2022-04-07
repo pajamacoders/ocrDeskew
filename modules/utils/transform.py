@@ -83,6 +83,52 @@ class Resize(object):
         inp['img']=img=cv2.resize(img, (512, 512), interpolation=cv2.INTER_CUBIC)
         return inp
 
+class ResizeBySize(object):
+    def __init__(self, size=(40,40)):
+        self.height = size[0]
+        self.width = size[1]
+    
+    def __call__(self, inp):
+        img = inp['img']
+        img = cv2.resize(img, dsize=(self.width, self.height), interpolation=cv2.INTER_AREA)
+        inp['img']=img
+        return inp
+
+class GaussianNoise(object):
+    def __init__(self, ratio=0.5, mean=0, std=3):
+        self.ratio=ratio
+        self.mean=mean
+        self.std=std
+
+    def __call__(self, inp):
+        if np.random.rand()<self.ratio:
+            img = inp['img']
+            h,w = img.shape
+            gaussian = np.random.normal(self.mean, self.std, (h,w)).astype(np.float32)
+            noisy_img = img.astype(np.float32)+gaussian
+            cv2.normalize(noisy_img, noisy_img, 0, 255, cv2.NORM_MINMAX, dtype=-1)
+            noisy_img = noisy_img.astype(np.uint8)
+            inp['img']=noisy_img
+        return inp
+
+class Translate(object):
+    def __init__(self,ratio=0.5, tx=5, ty=5):
+        self.ratio=ratio
+        self.tx = tx
+        self.ty = ty
+    def __call__(self, inp):
+        if np.random.rand()<self.ratio:
+            img = inp['img']
+            h,w = img.shape
+            tx = np.random.randint(0,self.tx)
+            ty = np.random.randint(0,self.ty)
+            M = np.float64([[1,0,tx],[0,1,ty]])
+            dst = cv2.warpAffine(img, M, (w,h))
+            inp['img']=dst
+        return inp
+
+    
+
 class RandomLineErasing(object):
     def __init__(self, ratio, min_line_width=5, max_line_width=40):
         self.ratio = ratio
@@ -215,7 +261,7 @@ class RandomRotation(object):
 
     def __call__(self, inp):
         if  np.random.rand()<self.ratio:
-            deg = np.random.uniform(-self.variant, self.variant)
+            
             img = inp['img']
             if len(img.shape)==2:
                 h,w= img.shape
@@ -223,9 +269,15 @@ class RandomRotation(object):
                 h,w,c = img.shape
             else:
                 pass
-            matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
+            deg1 = np.random.uniform(-self.variant, self.variant+0.1)
+            matrix = cv2.getRotationMatrix2D((w/2, h/2), deg1, 1)
+            dst = cv2.warpAffine(img, matrix, (w, h),borderValue = (0,0,0))
+
+            deg2 = np.random.uniform(-self.variant-deg1, self.variant-deg1)
+            matrix = cv2.getRotationMatrix2D((w/2, h/2), deg2, 1)
             border = np.random.randint(128,256)
-            dst = cv2.warpAffine(img, matrix, (w, h),borderValue = (border,border,border) if np.random.rand()<0.5 else (0,0,0))
+            dst = cv2.warpAffine(dst, matrix, (w, h),borderValue = (border,border,border) if np.random.rand()<0.5 else (0,0,0))
+            deg = deg1+deg2
             inp['img'] = dst
             cls = 1
         else:
@@ -280,31 +332,31 @@ class Shaper(object):
             inp['gray']=gray.transpose(2,0,1)
         return inp
 
-class RandomRotationTest(object):
-    def __init__(self, ratio, degree, buckets=None):
-        self.variant = eval(degree) if isinstance(degree, str) else degree
+class RandomDirection(object):
+    def __init__(self, ratio):
+        self.degrees = [0,90,180,270]
         self.ratio = eval(ratio) if isinstance(ratio, str) else ratio
-        self.buckets = eval(buckets) if isinstance(buckets, str) else buckets
 
     def __call__(self, inp):
         if  np.random.rand()<self.ratio:
-            deg = np.random.uniform(-self.variant, self.variant)
-            #deg = -self.variant if np.random.rand()>0.5 else self.variant #np.random.uniform(-self.variant, self.variant)
-            #deg = np.random.uniform(-self.variant, self.variant)
             img = inp['img']
             h,w= img.shape
+            cls = np.random.randint(0,len(self.degrees))
+            deg = self.degrees[cls]
             matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
-            dst = cv2.warpAffine(img, matrix, (w, h),borderValue=0)
+            dst = cv2.warpAffine(img, matrix, (w, h),borderValue = 0)
+
+            noise = np.random.uniform(-3, 3)
+            matrix = cv2.getRotationMatrix2D((w/2, h/2), noise, 1)
+            border = np.random.randint(0,256)
+            dst = cv2.warpAffine(dst, matrix, (w, h),borderValue = border)
             inp['img'] = dst
-            cls = 1
+            inp['noise']=noise
+            
         else:
             deg = 0
             cls = 0
-        if self.buckets:
-            rad = np.deg2rad(deg)
-            range_rad = np.deg2rad(90)
-            bucket = int(self.buckets * (rad+range_rad) / (2*range_rad))
-            inp['rot_id']=bucket
+      
         inp['cls']=cls
         inp['degree'] = deg
         return inp

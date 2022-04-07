@@ -5,7 +5,7 @@
         "ResizeAspectRatio":{"square_size":1280,"mag_ratio":1.5},
         "RandomLineErasing":{"ratio":0.5,"min_line_width":10, "max_line_width":30},
         "RandomCropAndPad":{"ratio":0.5 ,"size":[768,768]},
-        "RandomRotation":{"ratio":0.5, "degree":90, "buckets":360},
+        "RandomRotation":{"ratio":0.7, "degree":90, "buckets":360},
         "GrayScaleAndResize":{"target_size":640},
         "NormalizeMeanStd":{},
         "Shaper":{}
@@ -13,7 +13,7 @@
     },
     "dataset_cfg":{
         "type":"OCRDataset3ch",
-        "train_batch":32,
+        "train_batch":64,
         "valid_batch":8,
         "train":{
             "dataroot":"/train_data/train/*"
@@ -39,7 +39,7 @@
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-        "T_0":60,
+        "T_0":121,
         "eta_max":1e-4,
         "T_up":2,
         "gamma":0.5,    

@@ -30,7 +30,7 @@ class DeskewNetV8(nn.Module):
         assert isinstance(buckets, int), 'buckets must be type int'
         k=5
         self.block1 = nn.Sequential(
-                ConvBnHswish(2,16,k,padding=7//2),
+                ConvBnHswish(1,16,7,padding=7//2),
                 nn.MaxPool2d(2,2), #320x320
                 ConvBnHswish(16,32,k,padding=k//2),
                 nn.MaxPool2d(2,2), ##160x160

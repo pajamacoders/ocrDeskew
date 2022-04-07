@@ -102,9 +102,9 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
                 mask=blur(mask)
                 in_img = torch.concat([data['gray'], mask],dim=1)
                 
-                score_text = y[0,:,:,0].cpu().data.numpy()
-                ret_score_text = cvt2HeatmapImg(score_text)
-                cv2.imwrite(f'./samples/{i}.jpg',ret_score_text )
+                # score_text = y[0,:,:,0].cpu().data.numpy()
+                # ret_score_text = cvt2HeatmapImg(score_text)
+                # cv2.imwrite(f'./samples/{i}.jpg',ret_score_text )
         cls_logit = model(in_img)
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
