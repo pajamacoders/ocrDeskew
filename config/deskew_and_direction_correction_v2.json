@@ -1,17 +1,17 @@
 {
-    "task":"deskew",
-    "train_cfg":{"max_epoch":101, "validation_every_n_epoch":1},
+    "task":"deskewCorrection",
+    "train_cfg":{"max_epoch":121, "validation_every_n_epoch":5},
     "transform_cfg":{
-        "Resize":{"target_size":512},
-        "RandomLineErasing":{"ratio":0.5,"min_line_width":10, "max_line_width":30},
-        "RandomRotation":{"ratio":0.5, "degree":90, "buckets":360},
+        "ResizeV2": {"scale": 2},
+        "RandomRotation":{"ratio":1, "degree":90, "buckets":360},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
+       
     },
     "dataset_cfg":{
         "type":"OCRDataset",
-        "train_batch":256,
-        "valid_batch":4,
+        "train_batch":64,
+        "valid_batch":8,
         "train":{
             "dataroot":"/train_data/train/*"
         },
@@ -19,9 +19,17 @@
             "dataroot":"/train_data/valid/*"
         }
     },
-    "model_cfg":{
+    "craft_model_cfg":{
+        "type": "CRAFT", 
+        "args":{"craft_pretrained":"checkpoints/craft_mlt_25k.pth"}
+    },
+    "deskew_model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":360, "last_fc_in_ch":256}
+        "args":{"buckets":360, "last_fc_in_ch":256, "pretrained":"checkpoints/deskew_model_checkpoint.pth"}
+    },
+    "direction_model_cfg":{
+        "type":"STDirNet",
+        "args":{"pretrained":"checkpoints/STNet_kor_eng_num.pth"}
     },
     "optimizer_cfg":{
         "type":"Adam",
@@ -32,8 +40,8 @@
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-        "T_0":50,
-        "eta_max":1e-3,
+        "T_0":121,
+        "eta_max":1e-4,
         "T_up":2,
         "gamma":0.5,    
         "last_epoch":-1
@@ -44,10 +52,10 @@
     },
     "mllogger_cfg":
     {
-        "exp_name":"ocr_deskew",
+        "exp_name":"deskew_and_direction_correction",
         "run_name":"resnetTest",
         "user_id": "pajamacoder",
-        "save_model_at_epoch":[50],
+        "save_model_at_epoch":[60],
         "version":"1.4.0"
     }
 }

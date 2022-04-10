@@ -8,7 +8,10 @@ class ResizeAspectRatio(object):
 
     def __call__(self, inp):
         img = inp['img']
-        height, width, channel = img.shape
+        if len(img.shape)>2:
+            height, width, channel = img.shape
+        else:
+            height, width = img.shape
 
         # magnify image size
         target_size = self.mag_ratio * max(height, width)
@@ -39,8 +42,14 @@ class ResizeAspectRatio(object):
             target_h32 = target_h + (32 - target_h % 32)
         if target_w % 32 != 0:
             target_w32 = target_w + (32 - target_w % 32)
-        resized = np.zeros((target_h32, target_w32, channel), dtype=np.float32)*255.0
-        resized[0:target_h, 0:target_w, :] = proc
+
+        if len(img.shape)>2:
+            resized = np.zeros((target_h32, target_w32, channel), dtype=np.float32)
+            resized[0:target_h, 0:target_w, :] = proc
+        else:
+            resized = np.zeros((target_h32, target_w32), dtype=np.float32)
+            resized[0:target_h, 0:target_w] = proc
+
         target_h, target_w = target_h32, target_w32
 
         size_heatmap = (int(target_w/2), int(target_h/2))
@@ -60,10 +69,13 @@ class ResizeAspectRatio(object):
         return ratio
 
 class Resize(object):
-    def __init__(self, scale=4):
-        assert (scale!=0) and (scale&(scale-1))==0, 'scale must be power of 2'
-        self.iter = np.log2(scale).astype(int)
-    
+    '''
+    This class resizes image with considering aspect ratio.
+    If image is lager than target size, this class performs crop.
+    If image is smaller than target size, this class pads 0.
+    '''
+    def __init__(self, target_size=512):
+        self.target_size=target_size
     def __call__(self, inp):
         img = inp['img']
         if len(img.shape)==2:
@@ -76,12 +88,99 @@ class Resize(object):
         inp['org_width']=w
         k = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
         img = cv2.dilate(img, k)
+        iter = max(h,w)//self.target_size
+        for i in range(1,iter):
+            h, w = h//2, w//2
+            img=cv2.resize(img, (w, h), interpolation=cv2.INTER_AREA)
+            h, w = img.shape
+
+        h, w = img.shape
+        ratio = self.target_size / max(h, w)    
+        
+        target_h, target_w = int(h * ratio), int(w * ratio)
+        #resize aspect ration and pad
+        rsz_img = cv2.resize(img, (target_w, target_h), interpolation =  cv2.INTER_AREA)
+
+        img = self.pad_right(rsz_img)
+        inp['img']=img
+        return inp
+
+    def pad_right(self, crop):
+        if len(crop.shape)==2:
+            h,w = crop.shape
+            padded_img = np.zeros((self.target_size, self.target_size),dtype=np.float32)
+        elif len(crop.shape)==3:
+            h,w,c = crop.shape
+            padded_img = np.zeros((self.target_size, self.target_size,c), dtype=np.float32)
+
+        else:
+            pass
+        padded_img[:h,:w]=crop
+
+        return padded_img
+
+class ResizeV2(object):
+    def __init__(self, scale=2):
+        assert (scale!=0) and (scale&(scale-1))==0, 'scale must be power of 2'
+        self.iter = np.log2(scale).astype(int)
+        self.target_h=512
+        self.target_w=512
+    def __call__(self, inp):
+        img = inp['img']
+        if len(img.shape)==2:
+            h,w= img.shape
+        elif len(img.shape)==3:
+            h,w,c = img.shape
+        else:
+            pass
+        inp['org_height']=h
+        inp['org_width']=w
+        k = cv2.getStructuringElement(cv2.MORPH_RECT, (2,2))
+        img = cv2.dilate(img, k)
         for i in range(self.iter):
             h, w = h//2, w//2
-            img=cv2.resize(img, (w, h), interpolation=cv2.INTER_CUBIC)
+            img=cv2.resize(img, (w, h), interpolation=cv2.INTER_AREA)
             h, w = img.shape
-        inp['img']=img=cv2.resize(img, (512, 512), interpolation=cv2.INTER_CUBIC)
+        ratio = self.target_h / max(h, w)    
+      
+        target_h, target_w = int(h * ratio), int(w * ratio)
+        proc = cv2.resize(img, (target_w, target_h), interpolation =  cv2.INTER_AREA)
+        # if len(img.shape)==2:
+        #     h,w= img.shape
+        # elif len(img.shape)==3:
+        #     h,w,c = img.shape
+        # else:
+        #     pass
+        
+        # if h> self.target_h and w> self.target_w:
+        #     i, j = np.random.randint(h-self.target_h), np.random.randint(w-self.target_w)
+        #     crop = img[i:i+self.target_h, j:j+self.target_w]
+        # elif h> self.target_h and w <= self.target_w:
+        #     i = np.random.randint(h-self.target_h)
+        #     crop = img[i:i+self.target_h]
+        # elif h<= self.target_h and w > self.target_w:
+        #     j = np.random.randint(w-self.target_w)
+        #     crop = img[:,j:j+self.target_w]
+        # else:
+        #     crop = img
+
+        img = self.pad_right(proc)
+        inp['img']=img
         return inp
+
+    def pad_right(self, crop):
+        if len(crop.shape)==2:
+            h,w = crop.shape
+            padded_img = np.zeros((self.target_h, self.target_w),dtype=np.float32)
+        elif len(crop.shape)==3:
+            h,w,c = crop.shape
+            padded_img = np.zeros((self.target_h, self.target_w,c), dtype=np.float32)
+
+        else:
+            pass
+        padded_img[:h,:w]=crop
+
+        return padded_img
 
 class ResizeBySize(object):
     def __init__(self, size=(40,40)):
@@ -229,7 +328,7 @@ class GrayScaleAndResize(object):
 
         gray = np.ones((self.target_size, self.target_size), dtype=np.float32)*scale
         gray[:target_h, :target_w]=tmp
-        inp['gray']=gray/255.0
+        inp['gray']=gray
         return inp
         
 class RandomOrientation(object):
@@ -275,7 +374,7 @@ class RandomRotation(object):
 
             deg2 = np.random.uniform(-self.variant-deg1, self.variant-deg1)
             matrix = cv2.getRotationMatrix2D((w/2, h/2), deg2, 1)
-            border = np.random.randint(128,256)
+            border = 0#np.random.randint(128,256)
             dst = cv2.warpAffine(dst, matrix, (w, h),borderValue = (border,border,border) if np.random.rand()<0.5 else (0,0,0))
             deg = deg1+deg2
             inp['img'] = dst
@@ -317,6 +416,8 @@ class NormalizeMeanStd(object):
         inp['img']=img
         inp['mean']=self.mean
         inp['std']=self.std
+        if 'gray' in inp.keys():
+            inp['gray']=inp['gray']/255.0
         return inp
 
 class Shaper(object):

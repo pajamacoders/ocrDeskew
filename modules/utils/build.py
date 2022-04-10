@@ -17,6 +17,7 @@ transfactory={
     'GaussianNoise':GaussianNoise,
     'RandomDirection':RandomDirection,
     'Translate':Translate,
+    'ResizeV2':ResizeV2,
 
 }
 

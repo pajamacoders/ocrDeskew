@@ -130,6 +130,16 @@ class STDirNet(nn.Module):
         x = self.fc1(x)
         return x
     
+    def predict(self, x):
+        # transform the input
+        x = self.stn(x)
+
+        # Perform the usual forward pass
+        x = self.layer(x)
+        x = x.view(-1, 64*10*10)
+        x = self.fc1(x)
+        return torch.argmax(torch.softmax(x, -1), -1)
+    
     def load_weight(self, pretrained):
         if os.path.exists(pretrained):
             pre_state_dict = torch.load(pretrained)['model']

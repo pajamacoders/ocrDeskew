@@ -3,7 +3,7 @@
     "train_cfg":{"max_epoch":101, "validation_every_n_epoch":5},
     "transform_cfg":{
         "ResizeBySize":{"size":[40,40]},
-        "Translate":{"ratio":0.5, "tx":5, "ty":5},
+        "Translate":{"ratio":0.5, "tx":1, "ty":1},
         "GaussianNoise":{"ratio":0.5, "mean":0, "std":10},
         "RandomDirection":{"ratio":1},
         "Normalize":{"mean":0.0, "std":255.0},
@@ -12,18 +12,18 @@
     },
     "dataset_cfg":{
         "type":"FontDataSet",
-        "train_batch":256,
-        "valid_batch":256,
+        "train_batch":2048,
+        "valid_batch":1024,
         "train":{
-            "dataroot":"/font_dataset/digit/train/*"
+            "dataroot":"/font_dataset/train/*"
         },
         "valid":{
-            "dataroot":"/font_dataset/digit/valid/*"
+            "dataroot":"/font_dataset/valid/*"
         }
     },
     "model_cfg":{
         "type":"STDirNet",
-        "args":{}
+        "args":{"pretrained":"checkpoints/STNet_kor_eng_num.pth"}
     },
     "optimizer_cfg":{
         "type":"Adam",
@@ -34,9 +34,9 @@
     "lr_scheduler_cfg":{
         "type":"CosineAnnealingWarmUpRestarts",
         "args":{
-            "T_0":40,
+            "T_0":100,
             "eta_max":1e-4,
-            "T_up":2,
+            "T_up":3,
             "gamma":0.5,    
             "last_epoch":-1
             }
@@ -48,7 +48,7 @@
     {"exp_name":"DirectionPrediction",
         "run_name":"RotationNetTest",
         "user_id": "pajama",
-        "save_model_at_epoch":[100],
+        "save_model_at_epoch":[40,70,100],
         "version":"1.5.0"
     }
 }

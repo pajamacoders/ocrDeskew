@@ -1,0 +1,61 @@
+{
+    "task":"deskewCorrection",
+    "train_cfg":{"max_epoch":121, "validation_every_n_epoch":5},
+    "transform_cfg":{
+        "ResizeAspectRatio":{"square_size":1280,"mag_ratio":1.5},
+        "GrayScaleAndResize":{"target_size":640},
+        "NormalizeMeanStd":{},
+        "Shaper":{}
+       
+    },
+    "dataset_cfg":{
+        "type":"OCRDataset3ch",
+        "train_batch":64,
+        "valid_batch":8,
+        "train":{
+            "dataroot":"/train_data/train/*"
+        },
+        "valid":{
+            "dataroot":"/train_data/valid/*"
+        }
+    },
+    "craft_model_cfg":{
+        "type": "CRAFT", 
+        "args":{"craft_pretrained":"checkpoints/craft_mlt_25k.pth"}
+    },
+    "deskew_model_cfg":{
+        "type":"DeskewNetV8",
+        "args":{"buckets":360,"last_fc_in":204800, "last_fc_in_ch":256, "pretrained":"checkpoints/final_deskew_model.pth"}
+    },
+    "direction_model_cfg":{
+        "type":"STDirNet",
+        "args":{"pretrained":"checkpoints/STDNet_best.pth"}
+    },
+    "optimizer_cfg":{
+        "type":"Adam",
+        "args":{
+            "lr":1e-6
+            }
+        },
+    "lr_scheduler_cfg":{
+        "type":"CosineAnnealingWarmUpRestarts",
+        "args":{
+        "T_0":121,
+        "eta_max":1e-4,
+        "T_up":2,
+        "gamma":0.5,    
+        "last_epoch":-1
+        }
+    },
+    "loss_cfg":{
+        "type":"FocalLoss"
+    },
+    "mllogger_cfg":
+    {
+        "exp_name":"deskew_and_direction_correction",
+        "run_name":"resnetTest",
+        "user_id": "pajamacoder",
+        "save_model_at_epoch":[60],
+        "version":"1.4.0"
+    }
+}

@@ -26,9 +26,9 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
     ret, text_score = cv2.threshold(textmap, low_text, 1, 0)
     ret, link_score = cv2.threshold(linkmap, link_threshold, 1, 0)
 
-    text_score_comb = np.clip(text_score - link_score, 0, 1)
+    text_score_comb = np.clip(text_score - link_score, 0, 1) # - link_score
     nLabels, labels, stats, centroids = cv2.connectedComponentsWithStats(text_score_comb.astype(np.uint8), connectivity=4)
-
+    segmap = np.zeros(textmap.shape, dtype=np.uint8)
     det = []
     mapper = []
     for k in range(1,nLabels):
@@ -40,7 +40,7 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
         if np.max(textmap[labels==k]) < text_threshold: continue
 
         # make segmentation map
-        segmap = np.zeros(textmap.shape, dtype=np.uint8)
+        segmap.fill(0)
         segmap[labels==k] = 255
         segmap[np.logical_and(link_score==1, text_score==0)] = 0   # remove link area
         x, y = stats[k, cv2.CC_STAT_LEFT], stats[k, cv2.CC_STAT_TOP]
@@ -52,7 +52,8 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
         if sy < 0 : sy = 0
         if ex >= img_w: ex = img_w
         if ey >= img_h: ey = img_h
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(1 + niter, 1 + niter))
+        #kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(1 + niter, 1 + niter))
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(niter, niter))
         segmap[sy:ey, sx:ex] = cv2.dilate(segmap[sy:ey, sx:ex], kernel)
 
         # make box
@@ -227,12 +228,12 @@ def getPoly_core(boxes, labels, mapper, linkmap):
 def getDetBoxes(textmap, linkmap, text_threshold, link_threshold, low_text, poly=False):
     boxes, labels, mapper = getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
 
-    if poly:
-        polys = getPoly_core(boxes, labels, mapper, linkmap)
-    else:
-        polys = [None] * len(boxes)
+    # if poly:
+    #     polys = getPoly_core(boxes, labels, mapper, linkmap)
+    # else:
+    #     polys = [None] * len(boxes)
 
-    return boxes, polys
+    return boxes#, polys
 
 def adjustResultCoordinates(polys, ratio_w, ratio_h, ratio_net = 2):
     if len(polys) > 0:

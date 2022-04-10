@@ -111,7 +111,7 @@ def visualize_rotation_corrected_image_compute_error(data, logit, logger, info, 
 
 def visualize_Character_rotation(data, logit, logger, step=None):
     inds = [np.random.randint(0, data['img'].shape[0])] if step is not None else range(len(data['img']))
-    degress = [0,90,180,280]
+    degress = [0,90,180,270]
     for ind in inds:
         mean, std = data['mean'][ind], data['std'][ind]
         img = data['img'][ind].squeeze()

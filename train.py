@@ -153,10 +153,10 @@ if __name__ == "__main__":
         key_metric = 'rot_id'
         fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()
     else:
-        vis_func = visualize_Character_rotation #visualize_orientation_prediction_outputs
-        prediction_parser = parse_rotation_prediction_outputs #parse_orientation_prediction_outputs
+        vis_func = visualize_Character_rotation 
+        prediction_parser = parse_rotation_prediction_outputs 
         key_metric = 'cls'
-        fn_cls_loss = FocalLoss(None,2.0)  #torch.nn.BCEWithLogitsLoss()      
+        fn_cls_loss = torch.nn.CrossEntropyLoss() 
     
     for step in range(max_epoch):
         train(model, train_loader, fn_cls_loss, key_metric, opt, mltracker, step, prediction_parser)

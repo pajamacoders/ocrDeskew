@@ -48,10 +48,11 @@ def test(model, loader, fn_cls_loss, key_target, mllogger, vis_func, prediction_
         avg_cls_loss += cls_loss.detach()*cls_logit.shape[0]
         num_samples += cls_logit.shape[0]
         preds += prediction_parser(cls_logit).tolist()
-        vis_func(data, cls_logit, mllogger, error=error)
+        vis_func(data, cls_logit, mllogger,)
 
-    errors = np.array(error)
-    logger.info(f'prediction error:{np.sqrt(errors.mean()):.4f} degree, std:{np.sqrt(errors.std()):.8f}')
+    
+
+    
     avgloss =  (avg_total_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
     precision, recall, f1_score, support = precision_recall_fscore_support(labels, preds, average='macro')
@@ -94,10 +95,10 @@ if __name__ == "__main__":
     logger.info('set mlflow tracking')
     mltracker = MLLogger(cfg, logger)
     if cfg['task']=='deskew':
-        vis_func = partial(visualize_rotation_corrected_image_compute_error,info=cfg['transform_cfg']['RandomRotationTest'])
+        vis_func = partial(visualize_rotation_corrected_image,info=cfg['transform_cfg']['RandomRotation'])
         prediction_parser = parse_rotation_prediction_outputs
         key_metric = 'rot_id'
-        fn_cls_loss = FocalLoss(None,2.0) #torch.nn.CrossEntropyLoss()
+        fn_cls_loss = FocalLoss(None,2.0) 
     else:
         vis_func = visualize_orientation_prediction_outputs
         prediction_parser = parse_orientation_prediction_outputs

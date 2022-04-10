@@ -47,7 +47,7 @@ def saveResult(img_file, img, boxes, dirname='./result/', verticals=None, texts=
 
         # result directory
         res_file = dirname + "res_" + filename + '.txt'
-        res_img_file = dirname + "res_" + filename + '.jpg'
+        res_img_file = dirname + "res_" + filename + '_v2.jpg'
 
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
@@ -74,7 +74,45 @@ def saveResult(img_file, img, boxes, dirname='./result/', verticals=None, texts=
         # Save result image
         cv2.imwrite(res_img_file, img)
 
-def savePatches(img_file, img, boxes, dirname='./result/', verticals=None, texts=None):
+
+def getCharacterPatchFromImage(img, boxes, max_num_patch=20):
+    """ save text detection result one by one
+        Args:
+            img_file (str): image file name
+            img (array): raw image context
+            boxes (array): array of result file
+                Shape: [num_detections, 4] for BB output / [num_detections, 4] for QUAD output
+        Return:
+        None
+    """
+    img = np.array(img)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+    patches = []
+    if boxes==[]:
+        pass
+    elif boxes.shape[0]>max_num_patch:
+        indices = np.random.randint(0, boxes.shape[0], max_num_patch)
+        boxes=boxes[indices]
+    else:
+        pass
+
+    for i, box in enumerate(boxes):
+        poly = np.array(box).astype(np.int32).reshape((-1))
+        poly = poly.reshape(-1, 2)
+        patches.append(img[poly[0,1]:poly[2,1], poly[0,0]:poly[1,0]])
+    
+    ch_patches=[]
+    for i, patch in enumerate(patches):
+        try:
+            resized_img = cv2.resize(patch, dsize=(40,40))
+            ch_patches.append(255-resized_img)
+        except cv2.error:
+            pass
+    
+    return ch_patches
+
+def savePatches(img_file, img, boxes, dirname='./result/'):
         """ save text detection result one by one
         Args:
             img_file (str): image file name
@@ -84,38 +122,16 @@ def savePatches(img_file, img, boxes, dirname='./result/', verticals=None, texts
         Return:
             None
         """
-        img = np.array(img)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        patches = getCharacterPatchFromImage(img, boxes)
         # make result file list
         filename, file_ext = os.path.splitext(os.path.basename(img_file))
 
-        # result directory
-        res_file = dirname + "res_" + filename + '.txt'
-        res_img_file = dirname + "res_" + filename + '.jpg'
-
         if not os.path.isdir(dirname):
             os.mkdir(dirname)
-        patches = []
-        if boxes==[]:
-            pass
-        elif boxes.shape[0]>20:
-            indices = np.random.randint(0,boxes.shape[0],20)
-            boxes=boxes[indices]
-        else:
-            pass
-
-        for i, box in enumerate(boxes):
-            poly = np.array(box).astype(np.int32).reshape((-1))
-            poly = poly.reshape(-1, 2)
-            patches.append(img[poly[0,1]:poly[2,1], poly[0,0]:poly[1,0]])
-        
-        
         for i, patch in enumerate(patches):
             try:
-                resized_img = cv2.resize(patch, dsize=(40,40))    
-                cv2.imwrite(dirname+f'{i}_{filename}.jpeg', 255-resized_img)
-            except cv2.error:
+                cv2.imwrite(dirname+f'{i}_{filename}.jpeg', patch)
+            except OSError:
                 pass
-
     
 

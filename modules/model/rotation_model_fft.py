@@ -50,6 +50,17 @@ class DeskewNetV4(nn.Module):
         out = self.fc(out)
 
         return out
+    
+    def predict(self, x):
+        out = self.block1(x)
+        out = torch.fft.fft2(out)
+        out = out.real**2+out.imag**2
+        out = torch.log(1.0+out)
+        out = self.block2(out)
+        bs,c,h,w = out.shape
+        out = out.reshape(bs,-1)#torch.flatten(tmp,1)
+        out = self.fc(out)
+        return torch.argmax(torch.softmax(out, -1), -1)
 
     def __init_weight(self):
         for layer in self.modules():

@@ -1,4 +1,6 @@
 # ocrDeskew
+본 프로젝트에서는 [CRAFT](https://github.com/clovaai/CRAFT-pytorch) 를 character detection 을 위해 사용 한다.<br/>  
+Direction Estimation model은 한글 문서에 대해 작동한다. 영문, 숫자로 이루어진 문서에 대한 작동을 보장하지 않는다. <br/><br/>
 
 ## requirements
 도커 파일 참조
@@ -7,120 +9,134 @@ docker build -t ocr_deskew:latest .
 docker run -it --gpus all -p 0.0.0.0:5000:5000 -v /path/to/project:/code -v /path/to/data:/home/train_data_v2 ocr_deskew:latest
 ```
 
-## run command
+## Model description
+1. Deskew model: <br/>
+Deskewing is a process whereby skew is removed by rotating an image by the same amount as its skew.<br/>
+It estimates angle between -90 to 90 degree.<br/>
+디스큐 모델은 -90~90 도 사이의 임의의 각도로 회전된 문서가 회정된 정도를 예측한다. <br/>
+각도 추정 문제를 classification 문제로 정의 하고 -90~90 도 사이의 각도를 0.5도 단위로 클래스로 정의해 어느 클래스에 속하는지 분류 한다. <br/>
+
+2. direction estimation model: 
+Deskew model is not perpect so to make up deskew model.<br/>
+Direction estimation model classifies input image to 4 class. <br/>
+class 0: image is not rotated.<br/>
+class 1: image is rotated by 90 degree.<br/>
+class 2: image is rotated by 180 degree.<br/>
+class 3: image is rotated by 270 degree.<br/>
+디렉션 추정 모델은 입력 이미지가 0,90,180,270 도 중 어느 각도로 회전 되어있는지 4 클래스 분류 문제를 푼다.<br/> 
+
+회전된 문서가 입력으로 들어왔을때 <br/>
+input_img -> deskew model -> direction estimation model -> output image <br/>
+의 순으로 파이프 라인을 구성해 최종 output image가 회전없는 문서가 되도록 하는 것을 목표로 한다. <br/><br/><br/>
+
+
+## Deskew model train 
 train:
 ```bash
-python3 train.py --config config/resnet_ocr.json --run_name {RUN_NAME_YOU_WANT}
+python3 train.py --config config/rotmodel_fft_version_mid_range_90.json --run_name {RUN_NAME_YOU_WANT}
 ```
 
 test:
 ```bash
-python3 test.py --config config/rotmodel_fft_version.json --run_name {RUN_NAME_YOU_WANT}
+python3 test.py --config config/rotmodel_fft_version_mid_range_90_test.json --run_name {RUN_NAME_YOU_WANT}
+```
+<br/><br/>
+
+## Direction Estimation Model train
+train:
+```bash
+python3 train.py --config config/STDirNet_config.json --run_name {RUN_NAME_YOU_WANT}
 ```
 
+test:
+```bash
+python3 inference_direction.py --config config/STDirNet_config_valid.json --run_name {RUN_NAME_YOU_WANT}
+```
+<br/><br/>
+
+## Serve model
 serve:
 ```bash
-python3 serve.py --deskew_config config/rotmodel_fft_version_small.json --orientation_config config/upside_down_vit.json --run_name {RUN_NAME_YOU_WANT} 
+python3 serve_patch_base.py --config config/deskew_and_direction_correction_v2.json --run_name {RUN_NAME_YOU_WANT} --input_data_dir {path/to/image_dir/*}
 ```
+<br/><br/>
+
+## Checkpoints
+
+1. Deskew model checkpoint <br/>
+ [deskew_model_checkpoint.pth](https://drive.google.com/file/d/1Btgi_taAgAdqAvvzaELI8OrVt0eJZI_6/view?usp=sharing) <br/>
+
+학습 방식: 학습시 입력 이미지를 -90~+90 도 범위 내에서 임의로 회전 시키고 0.5도 단위로 class를 구분해 <br/>
+회전의 정도를 classification 문제로 정의 하고 학습시킨 checkpoint.<br/>
+아래 augmentation 적용: <br/>
+    resize aspect ratio <br/>
+    random line erasing <br/>
+    random rotation <br/>
+
+모델 입력 이미지 size: 1x512x512 (ch x height x width) <br/>
+
+테스트 결과: <br/>
+1.1 입력 이미지가 -90~+90 도 이내의 회전을 보일 경우 testset 에 대해 아래 결과를 얻음: <br/>
+cls_loss:0.057, precision:0.946, recall:0.945, f1_score:0.938 <br/><br/>
+model config file: config/rotmodel_fft_version_mid_range_90_test.json<br/>
+테스트시 위 모델 다운 받고 'config/rotmodel_fft_version_mid_range_90_test.json' 의 <br/>
+model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의 path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정. <br/>
 
 
-## 회전 보정 모델 체크 포인트
-1. [cls_model_deg_range_89](https://drive.google.com/file/d/1P_fj-hDsW4TJkUCo-jKMVQEPrTPsy7M0/view?usp=sharing)
+2. Direction estimation model checkpoint <br/>
+[STNet_kor_eng_num.pth](https://drive.google.com/file/d/172yx5bHs7C6i5EM_6n47F5fjne7e64lt/view?usp=sharing) <br/>
+학습 방식: 입력 이미지를 0,90,180,270 4가지 중 한 방향으로 회전 시켜 입력하고 <br/>
+  degree  class <br/>
+    0   ->  0   <br/>
+    90  ->  1 <br/>
+    180 ->  2 <br/>
+    270 ->  3 <br/>
+위와 같이 클래스를 부여해 분류 하도록 학습 시킴.  <br/>
 
-tag: cls_model_deg_range_89
+모델 입력 이미지 size: 1x40x40 (ch x height x width) <br/>
 
-데이터셋: 학습시 입력 이미지를 -89~+89 도 범위 내에서 임의로 회전 시키고 0.5도 단위로 class를 구분해 회전의 정도를 classification 
-문제로 정의 하고 학습시킨 checkpoint
-
-테스트 결과:
-1.1 입력 이미지가 -89~+89 도 이내의 회전을 보일 경우 testset 에 대해 아래 결과를 얻음:
-
-cls_loss:0.0898, precision:0.9495, recall:0.9454, f1_score:0.9441
-
-model config file: config/rotmodel_fft_version_large.json
-
-테스트시 위 모델 다운 받고 'config/rotmodel_fft_version_large.json' 의 model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의 
-path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정.
-
-
-2. [deskew_model_aug_rot_180_state_dict](https://drive.google.com/file/d/1tXntxFk5KXfYfQS70FsCcGnsqkwfgXhF/view?usp=sharing)
-데이터셋: 학습시 입력 이미지를 -89~+89 도 범위 내에서 임의로 회전 시키고 0.5도 단위로 class를 구분해 회전의 정도를 classification 
-문제로 정의 하고 학습시킨 checkpoint
-
-실험 결과:
-cls_loss:0.0842, precision:0.9540, recall:0.9527, f1_score:0.9485
-
-model config file: config/rotmodel_fft_version_small_range_89.json
-
-테스트시 위 모델 다운 받고 'config/rotmodel_fft_version_small_range_89.json' 의 model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의 
-path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정.
-config file 내의 아래 설정값을 주어진 값으로 바꿀것
+실험 결과: <br/>
+precidion:0.9603, recall:0.9583, f1_score:0.9584 <br/>
+model config file: config/STDirNet_config_valid.json <br/>
+테스트시 위 모델 다운 받고 'config/STDirNet_config_valid.json' 의 model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의  <br/>
+path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정. <br/>
+config file 내의 아래 설정값을 주어진 값으로 바꿀것 <br/>
 
 
-3. [rot_range_90_correction_checkpoint.pth](https://drive.google.com/file/d/1FpCyAc3vpTpMR-0oYjz1hSdkBfPkQ1HT/view?usp=sharing)
-tag: rot_range_90
-데이터셋: 학습시 입력 이미지를 -90~+90 도 범위 내에서 임의로 회전 시키고 0.5도 단위로 class를 구분해 회전의 정도를 classification 
-문제로 정의 하고 학습시킨 checkpoint
-
-실험 결과:
-cls_loss:0.0842, precision:0.9336, recall:0.9326, f1_score:0.9281
-model config file: config/rotmodel_fft_version_small_range_90.json
-
-인퍼런스 결과 해석:
-회전되어 들어오는 이미지는 보정되어 0,180,-90,90 도 회전된 이미지로 바뀐다. 
-예) 시계 방향으로 79도 회전된 이미지가 입력으로 들어오면 네트워크는 이 이미지가 회전된 정도를 79도 로 예측해 반시계반향으로 79도 회전시켜  0도 회전된 이미지로 만들 수도 있고 -11도 회전된 이미지로 판단하고 시계방향으로 11도 회전시켜 (79+11)=90 도 회전된 이미지로 보정할 수도 있다. 
-이러한 경향성이 있으므로 정확한 보정을 위해서는 0,180,90,-90 도 4개 방향으로 회전된 모델을 학습 시켜 모든 이미지를 0도 회전된 이미지로 만드는 2 stage 접근이 필요 한것으로 보인다. 
+3. [craft_mlt_25k.pth](https://drive.google.com/file/d/1YEYHzt4sD7LVH-HB0mfnrxlcrCmRHDh9/view?usp=sharing) <br/>
+pretrained craft model checkpoint <br/><br/>
+모델 입력 이미지 size: 3 x height x width 
 
 
-테스트시 위 모델 다운 받고 'config/rotmodel_fft_version_small_range_90.json' 의 model_cfg['args']['pretrained'] 의 path를 다운 받은 모델의 
-path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지정.
-
-## 상하 반전 보정 모델 체크 포인트
-1. [upside_down_mobilevit_v1.0](https://drive.google.com/file/d/1ecFc8iMWZl4H3a4NTsLeKKvng6a8jubK/view?usp=sharing)
-tag:
-설명: 상하 반전된 문서를 보정하기 위한 네트워크의 체크 포인트
-
-데이터셋: aihub 데이터셋을 상하 반전 및 -5~5degree 사이에서 회전시켜 학습 시킴
-
-테스트 결과:테스트 데이터셋 기준(이미지 약 3600장)
-
-cls_loss:0.041, precision: 0.992, recall: 0.992, f1 score0.992
-
-model config file: config/upside_down_vit.json
-
-
-## serve file 사용 방법
+## serve_patch_base.py 사용 방법
 예)
-1. 회전 모델 체크포인트 rot_range_90_correction_checkpoint.pth를  ./checkpoints 에 다운로드
-2. 해당 체크포인트의 model config 파일(config/rotmodel_fft_version_small_range_90.json)의 model_cfg->args에 pretrained 파라미터 추가
+1. deskew model 체크포인트 deskew_model_checkpoint.pth를  './checkpoints' 에 다운로드 <br/>
+2. direction correction model  체크 포인트 STNet_kor_eng_num.pth를 './checkpoints' 에 다운로드 <br/>
+3. craft model의 체크 포인트 craft_mlt_25k.pth 를 './checkpoints' 에 다운로드  <br/>
+4. serve_patch_base.py 를 위한 configuration file 설정 <br/>
+configuration file location : config/deskew_and_direction_correction_v2.json <br/>
+위 config 파일 내에 다음과 같이 각 모델의 정보와 checkpoint 위치 설정 <br/>
+ex)
 ```
-    -> "model_cfg":{
+  "craft_model_cfg":{
+        "type": "CRAFT", 
+        "args":{"craft_pretrained":"checkpoints/craft_mlt_25k.pth"}
+    },
+    "deskew_model_cfg":{
         "type":"DeskewNetV4",
-        "args":{"buckets":361, "last_fc_in_ch":128, "pretrained":"checkpoints/rot_range_90_correction_checkpoint.pth"}
-    }
-```
-
-3. 상하 반전 보정 모델 체크 포인트 upside_down_mobilevit_v1.0를 .checkpoints/에 다운로드
-4. 상하 반전 보정 모델의 model config 파일(config/upside_down_vit.json)의  model_cfg->args에 pretrained 파라미터 추가
-```
-  ->  "model_cfg":{
-        "type":"MobileViT",
-        "args":{
-            "image_size":[512,512],
-            "dims":[64, 80, 96],
-            "channels":[16, 16, 24, 24, 48, 48, 64, 64, 80, 80, 320],
-            "num_classes":1,
-            "expansion":2,
-            "pretrained":"checkpoints/upside_down_v1.0.pth"
-        }
+        "args":{"buckets":360, "last_fc_in_ch":256, "pretrained":"checkpoints/deskew_model_checkpoint.pth"}
+    },
+    "direction_model_cfg":{
+        "type":"STDirNet",
+        "args":{"pretrained":"checkpoints/STNet_kor_eng_num.pth"}
     }
 ```
 5. 실행
 ```bash
-python3 serve.py --deskew_config config/rotmodel_fft_version_small_range_90.json --orientation_config config/upside_down_vit.json --run_name your_run_name
+python3 serve_patch_base.py --config config/deskew_and_direction_correction_v2.json --run_name {RUN_NAME_YOU_WANT} --input_data_dir path/to/image_dir
 ```
 
 ## run tracking ui
 ```bash
-mlflow ui
+docker-compose up -d
 ```
