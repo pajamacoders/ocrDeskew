@@ -133,7 +133,7 @@ if __name__ == "__main__":
     mltracker = MLLogger(cfg, logger)
     root = '/train_data/valid/*' 
     imgs = glob.glob(root)
-
+    i=0
     degrees = [0,90,180,270]
     gt_list=[]
     pred_list=[]
@@ -151,7 +151,7 @@ if __name__ == "__main__":
             inp={'img':255-rm_bg_img, 'imgpath': impath}
             
             data = tr(inp) # resize and change shape
-
+           
             data['img'] = torch.from_numpy(data['img']).float()
             if len(data['img'].shape)<4:
                 data['img'] = data['img'].unsqueeze(0)
@@ -176,7 +176,7 @@ if __name__ == "__main__":
                     pred = candidates.most_common(1)[0][0]
                     degree = degrees[pred]
                     result_deg = abs(deg_orgimg2_deskewimg-degree)
-                    if result_deg in [0,1,2, 358, 359, 360, 361, 362]:
+                    if result_deg in [0,1, 359, 360, 361]:
                         pred_list.append(0)
                     else:
                         pred_list.append(1)

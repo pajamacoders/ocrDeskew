@@ -2,7 +2,7 @@
     "task":"deskewCorrection",
     "train_cfg":{"max_epoch":121, "validation_every_n_epoch":5},
     "transform_cfg":{
-        "ResizeV2": {"scale": 2},
+        "Resize":{"target_size":512},
         "RandomRotation":{"ratio":1, "degree":90, "buckets":360},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}

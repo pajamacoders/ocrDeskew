@@ -50,7 +50,7 @@
             "request": "launch",
             "program": "pipeline_test.py",
             "console": "integratedTerminal",
-            "args":["--config", "config/rotmodel_fft_version_mid_range_90.json"]
+            "args":["--config", "config/deskew_and_direction_correction_v2.json"]
         },
         {
             "name": "serve_2nd",
