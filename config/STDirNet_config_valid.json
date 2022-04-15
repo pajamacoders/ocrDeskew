@@ -3,9 +3,6 @@
     "train_cfg":{"max_epoch":101, "validation_every_n_epoch":5},
     "transform_cfg":{
         "ResizeBySize":{"size":[40,40]},
-        "Translate":{"ratio":0.5, "tx":1, "ty":1},
-        "GaussianNoise":{"ratio":0.5, "mean":0, "std":10},
-        "RandomDirection":{"ratio":1},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
 
@@ -13,17 +10,17 @@
     "dataset_cfg":{
         "type":"FontDataSet",
         "train_batch":2048,
-        "valid_batch":1024,
+        "valid_batch":1,
         "train":{
-            "dataroot":"/font_dataset/train/*"
+            "dataroot":"patches_infer/*"
         },
         "valid":{
-            "dataroot":"/font_dataset/valid/*"
+            "dataroot":"patches_infer/*"
         }
     },
     "model_cfg":{
         "type":"STDirNet",
-        "args":{"pretrained":"checkpoints/STNet_kor_eng_num.pth"}
+        "args":{"pretrained":"checkpoints/STNet_kor.pth"}
     },
     "optimizer_cfg":{
         "type":"Adam",

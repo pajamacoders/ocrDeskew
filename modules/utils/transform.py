@@ -88,8 +88,8 @@ class Resize(object):
         inp['org_width']=w
         k = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
         img = cv2.dilate(img, k)
-        iter = max(h,w)//self.target_size
-        for i in range(1,iter):
+
+        while (max(h,w)//self.target_size) > 1:
             h, w = h//2, w//2
             img=cv2.resize(img, (w, h), interpolation=cv2.INTER_AREA)
             h, w = img.shape
@@ -388,7 +388,7 @@ class RandomRotation(object):
             bucket = int(self.buckets * (rad+range_rad) / (2*range_rad))
             inp['rot_id']=bucket
         inp['cls']=cls
-        inp['degree'] = deg
+        inp['degree'] += deg
         return inp
 
 class Normalize(object):
@@ -447,12 +447,12 @@ class RandomDirection(object):
             matrix = cv2.getRotationMatrix2D((w/2, h/2), deg, 1)
             dst = cv2.warpAffine(img, matrix, (w, h),borderValue = 0)
 
-            noise = np.random.uniform(-3, 3)
-            matrix = cv2.getRotationMatrix2D((w/2, h/2), noise, 1)
-            border = np.random.randint(0,256)
-            dst = cv2.warpAffine(dst, matrix, (w, h),borderValue = border)
+            # noise = np.random.uniform(-3, 3)
+            # matrix = cv2.getRotationMatrix2D((w/2, h/2), noise, 1)
+            # border = np.random.randint(0,256)
+            # dst = cv2.warpAffine(dst, matrix, (w, h),borderValue = border)
             inp['img'] = dst
-            inp['noise']=noise
+            #inp['noise']=noise
             
         else:
             deg = 0

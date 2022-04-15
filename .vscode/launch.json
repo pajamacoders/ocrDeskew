@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "train.py",
             "console": "integratedTerminal",
-            "args":["--config", "config/STDirNet_config.json","--run_name", "remove_it"]
+            "args":["--config", "config/rotmodel_fft_version_mid_range_90.json"]
         },
         {
             "name": "test",
@@ -18,7 +18,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args":["--config", "config/rotmodel_fft_version_mid_range_90_test.json","--run_name", "Character_based_direction_estimation"]
+            "args":["--config", "config/STDirNet_config_valid.json","--run_name", "4class_test"]
         },
         {
             "name": "serve_test",
@@ -58,7 +58,7 @@
             "request": "launch",
             "program": "serve_2nd.py",
             "console": "integratedTerminal",
-            "args":["--config", "config/deskew_and_direction_correction_v2.json", "--run_name", "number_4class_prediction_STNet_Test"]
+            "args":["--config", "config/deskew_and_direction_correction_v2.json", "--run_name", "deskew_and_text_direction_correction_bug_fix"]
         },
         {
             "name": "patch_maker",
@@ -73,7 +73,15 @@
             "request": "launch",
             "program": "serve_patch_base.py",
             "console": "integratedTerminal",
-            "args":["--config", "config/deskew_and_direction_correction_v2.json", "--run_name", "number_4class_prediction_STNet_Test"]
+            "args":["config/deskew_and_direction_correction_v2.json", "samples"]
+        },
+        {
+            "name": "craft_test",
+            "type": "python",
+            "request": "launch",
+            "program": "craft_test.py",
+            "console": "integratedTerminal",
+            "args":[]
         }
     ]
 }

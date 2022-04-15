@@ -1,6 +1,6 @@
 {
     "task":"deskew",
-    "train_cfg":{"max_epoch":101, "validation_every_n_epoch":1},
+    "train_cfg":{"max_epoch":101, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"target_size":512},
         "RandomLineErasing":{"ratio":0.5,"min_line_width":10, "max_line_width":30},
@@ -11,7 +11,7 @@
     "dataset_cfg":{
         "type":"OCRDataset",
         "train_batch":256,
-        "valid_batch":4,
+        "valid_batch":256,
         "train":{
             "dataroot":"/train_data/train/*"
         },

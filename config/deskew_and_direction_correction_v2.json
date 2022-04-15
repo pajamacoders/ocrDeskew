@@ -1,23 +1,12 @@
 {
     "task":"deskewCorrection",
-    "train_cfg":{"max_epoch":121, "validation_every_n_epoch":5},
     "transform_cfg":{
         "Resize":{"target_size":512},
+        "RandomDirection":{"ratio":1},
         "RandomRotation":{"ratio":1, "degree":90, "buckets":360},
         "Normalize":{"mean":0.0, "std":255.0},
         "Shaper":{}
        
-    },
-    "dataset_cfg":{
-        "type":"OCRDataset",
-        "train_batch":64,
-        "valid_batch":8,
-        "train":{
-            "dataroot":"/train_data/train/*"
-        },
-        "valid":{
-            "dataroot":"/train_data/valid/*"
-        }
     },
     "craft_model_cfg":{
         "type": "CRAFT", 
@@ -30,25 +19,6 @@
     "direction_model_cfg":{
         "type":"STDirNet",
         "args":{"pretrained":"checkpoints/STNet_kor_eng_num.pth"}
-    },
-    "optimizer_cfg":{
-        "type":"Adam",
-        "args":{
-            "lr":1e-6
-            }
-        },
-    "lr_scheduler_cfg":{
-        "type":"CosineAnnealingWarmUpRestarts",
-        "args":{
-        "T_0":121,
-        "eta_max":1e-4,
-        "T_up":2,
-        "gamma":0.5,    
-        "last_epoch":-1
-        }
-    },
-    "loss_cfg":{
-        "type":"FocalLoss"
     },
     "mllogger_cfg":
     {

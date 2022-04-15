@@ -138,7 +138,9 @@ class STDirNet(nn.Module):
         x = self.layer(x)
         x = x.view(-1, 64*10*10)
         x = self.fc1(x)
-        return torch.argmax(torch.softmax(x, -1), -1)
+        prob = torch.softmax(x, -1)
+
+        return torch.argmax(prob, -1)
     
     def load_weight(self, pretrained):
         if os.path.exists(pretrained):

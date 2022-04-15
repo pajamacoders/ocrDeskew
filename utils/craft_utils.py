@@ -7,6 +7,7 @@ MIT License
 import numpy as np
 import cv2
 import math
+from utils import imgproc
 
 """ auxilary functions """
 # unwarp corodinates
@@ -25,8 +26,8 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
     """ labeling method """
     ret, text_score = cv2.threshold(textmap, low_text, 1, 0)
     ret, link_score = cv2.threshold(linkmap, link_threshold, 1, 0)
-
-    text_score_comb = np.clip(text_score - link_score, 0, 1) # - link_score
+  
+    text_score_comb = np.clip(text_score, 0, 1) # - link_score
     nLabels, labels, stats, centroids = cv2.connectedComponentsWithStats(text_score_comb.astype(np.uint8), connectivity=4)
     segmap = np.zeros(textmap.shape, dtype=np.uint8)
     det = []
@@ -52,13 +53,15 @@ def getDetBoxes_core(textmap, linkmap, text_threshold, link_threshold, low_text)
         if sy < 0 : sy = 0
         if ex >= img_w: ex = img_w
         if ey >= img_h: ey = img_h
-        #kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(1 + niter, 1 + niter))
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(niter, niter))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1 + niter, 1 + niter))
+        #kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(niter, niter))
         segmap[sy:ey, sx:ex] = cv2.dilate(segmap[sy:ey, sx:ex], kernel)
 
         # make box
         np_contours = np.roll(np.array(np.where(segmap!=0)),1,axis=0).transpose().reshape(-1,2)
         rectangle = cv2.minAreaRect(np_contours)
+        if max(rectangle[1])/min(rectangle[1])>=1.5: continue
+
         box = cv2.boxPoints(rectangle)
 
         # align diamond-shape

@@ -132,3 +132,21 @@ def visualize_Character_rotation(data, logit, logger, step=None):
         if step:
             save_name=f'ep_{step}_sample_'+save_name
         logger.log_image(resimg, name=save_name)
+
+
+def save_checkpoint(model, epoch, task, isbest=False):
+    out_dir='./checkpoints'
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
+
+    if isbest:
+        chkp_name=f'{task}_best_model.pth'
+    else:
+        chkp_name=f'{task}_latest_model.pth'
+
+    state_dict = {
+        "model": model.state_dict(),
+        "epoch": epoch
+    }     
+    torch.save(state_dict, os.path.join(out_dir,chkp_name))
+ 

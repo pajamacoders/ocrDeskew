@@ -10,16 +10,9 @@ class FontDataSet(Dataset):
     def __init__(self,dataroot, transformer=None, inverse_color=True):
         super(FontDataSet, self).__init__()
         self.transformer=transformer
-        #self.mode = mode
         self.img_pathes = glob.glob(dataroot, recursive=True)
         self.length = len(self.img_pathes)
-        # print(f'before_move:{len(self.img_pathes)}')
-        # for path in self.img_pathes :
-        #     if os.path.isfile(path):
-        #         name = os.path.basename(path)
-        #         sh.move(path,f'/font_dataset/train/{name}')
-        # ll = glob.glob('/font_dataset/train/*', recursive=True)
-        # print(len(ll))
+
     def set_transformer(self, tr):
         self.transformer=tr
 

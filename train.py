@@ -9,7 +9,7 @@ from modules.dataset import build_dataloader
 from modules.model import build_model
 from modules.loss import FocalLoss
 from sklearn.metrics import precision_recall_fscore_support
-from utils import visualize_Character_rotation, parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs
+from utils import visualize_Character_rotation, parse_rotation_prediction_outputs, visualize_rotation_corrected_image, save_checkpoint
 from functools import partial
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
@@ -17,7 +17,8 @@ stream_handler = logging.StreamHandler()
 logger.addHandler(stream_handler)
 minloss = 999
 
-def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, prediction_parser=None):
+
+def valid(model, loader, fn_cls_loss, key_target, vis_func, mllogger=None, step=0, prediction_parser=None):
     global minloss
     model.eval()
     avg_total_loss = 0
@@ -47,25 +48,26 @@ def valid(model, loader, fn_cls_loss, key_target, mllogger, step, vis_func, pred
 
     avgloss =  (avg_total_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
-    
-    mllogger.log_metric('valid_loss',avgloss, step)
-    mllogger.log_metric('valid_cls_loss',stat_cls_loss, step)
-    log_msg = f'valid-{step} epoch: cls_loss:{stat_cls_loss:.4f}'
+    precision, recall, f1_score =0.0, 0.0, 0.0
     if prediction_parser:
         precision, recall, f1_score, support = precision_recall_fscore_support(labels, preds, average='macro')
+    
+    if mllogger:
+        mllogger.log_metric('valid_loss',avgloss, step)
+        mllogger.log_metric('valid_cls_loss',stat_cls_loss, step)
         mllogger.log_metric('valid_precision',precision, step),
         mllogger.log_metric('valid_recall',recall, step)
         mllogger.log_metric('valid_f1_score',f1_score, step)
-        log_msg+=f' precision:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f},support:{support}.'
+        if minloss > avgloss:
+            minloss=avgloss
+            mllogger.log_state_dict(step, model, isbest=True)
+        vis_func(data, cls_logit, mllogger, step=step)
+    log_msg = f'valid-{step} epoch: cls_loss:{stat_cls_loss:.4f}'
+    log_msg+=f' precision:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f} .'
     logger.info(log_msg)
-
-    if minloss > avgloss:
-        mllogger.log_state_dict(step, model, isbest=True)
-
-    vis_func(data, cls_logit, mllogger, step=step)
-    
-    
-def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, prediction_parser=None):
+    return avgloss
+ 
+def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger=None, step=0, prediction_parser=None):
     model.train()
     avg_total_loss = 0
     avg_cls_loss = 0
@@ -76,8 +78,7 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
     for i, data in tqdm(enumerate(loader)):
         optimizer.zero_grad()
         data['img'] = data['img'].cuda(non_blocking=True).float()
-        
-    
+
         if key_target in data.keys():
             labels+=data[key_target].tolist()
             data[key_target]= data[key_target].cuda(non_blocking=True).float()
@@ -88,9 +89,9 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
 
         cls_loss = fn_cls_loss(cls_logit, data[key_target])
         total_loss = cls_loss
-        avg_total_loss+=total_loss.detach()*cls_logit.shape[0]
+        avg_total_loss += total_loss.detach()*cls_logit.shape[0]
         avg_cls_loss += cls_loss.detach()*cls_logit.shape[0]
-        num_samples+=cls_logit.shape[0]
+        num_samples += cls_logit.shape[0]
         total_loss.backward()
         optimizer.step()
         if prediction_parser:
@@ -98,18 +99,22 @@ def train(model, loader, fn_cls_loss, key_target, optimizer, mllogger, step, pre
 
     avgloss =  (avg_total_loss/num_samples).item()
     stat_cls_loss =  (avg_cls_loss/num_samples).item()
-   
-    mllogger.log_metric('train_total_loss',avgloss, step)
-    mllogger.log_metric('train_cls_loss',stat_cls_loss, step)
-    log_msg = f'train-{step} epoch: cls_loss:{stat_cls_loss:.6f}'
+
+    precision, recall, f1_score =0.0, 0.0, 0.0
     if prediction_parser:
         precision, recall, f1_score, support = precision_recall_fscore_support(labels, preds, average='macro')
+
+    if mllogger:
+        mllogger.log_metric('train_total_loss', avgloss, step)
+        mllogger.log_metric('train_cls_loss', stat_cls_loss, step)  
         mllogger.log_metric('train_precision',precision, step)
         mllogger.log_metric('train_recall',recall, step)
         mllogger.log_metric('train_f1_score',f1_score, step)
-    log_msg+=f', precision:{precision:.6f}, recall:{recall:.6f}, f1_score:{f1_score:.6f},support:{support}.'
+        mllogger.log_state_dict(step, model, isbest=False)
+
+    log_msg = f'train-{step} epoch: cls_loss:{stat_cls_loss:.6f}'
+    log_msg+=f', precision:{precision:.6f}, recall:{recall:.6f}, f1_score:{f1_score:.6f} .'
     logger.info(log_msg)
-    mllogger.log_state_dict(step, model, isbest=False)
 
 
 def parse_args():
@@ -145,7 +150,10 @@ if __name__ == "__main__":
     valid_ecpoh = cfg['train_cfg']['validation_every_n_epoch']
     logger.info(f'max_epoch :{max_epoch}')
     logger.info('set mlflow tracking')
-    mltracker = MLLogger(cfg, logger)
+    if args.run_name:
+        mltracker = MLLogger(cfg, logger)
+    else:
+        mltracker = None
 
     if cfg['task']=='deskew':
         vis_func = partial(visualize_rotation_corrected_image,info=cfg['transform_cfg']['RandomRotation'])
@@ -157,13 +165,20 @@ if __name__ == "__main__":
         prediction_parser = parse_rotation_prediction_outputs 
         key_metric = 'cls'
         fn_cls_loss = torch.nn.CrossEntropyLoss() 
-    
+    loss=9999
     for step in range(max_epoch):
         train(model, train_loader, fn_cls_loss, key_metric, opt, mltracker, step, prediction_parser)
         if (step+1)%valid_ecpoh==0:
-            valid(model, valid_loader, fn_cls_loss, key_metric,  mltracker, step, vis_func, prediction_parser)
+            loss = valid(model, valid_loader, fn_cls_loss, key_metric, vis_func, mltracker, step, prediction_parser)
         lr_scheduler.step()
-        mltracker.log_metric(key='learning_rate', value=opt.param_groups[0]['lr'], step=step)
+        
+        if mltracker:
+            mltracker.log_metric(key='learning_rate', value=opt.param_groups[0]['lr'], step=step)
+        else:
+            save_checkpoint(model, step, task=cfg['task'],isbest=minloss>loss)
+            minloss=min(minloss,loss)
+        
+
 
     
         

@@ -10,7 +10,8 @@ from modules.utils import build_transformer, MLLogger
 from modules.dataset import build_dataloader
 from modules.model import build_model
 from sklearn.metrics import precision_recall_fscore_support
-from utils import parse_rotation_prediction_outputs, parse_orientation_prediction_outputs, visualize_rotation_corrected_image, visualize_orientation_prediction_outputs, visualize_rotation_corrected_image_compute_error
+from utils import parse_rotation_prediction_outputs,visualize_Character_rotation , visualize_rotation_corrected_image, visualize_orientation_prediction_outputs, visualize_rotation_corrected_image_compute_error
+
 from functools import partial
 from modules.loss import FocalLoss
 
@@ -32,6 +33,7 @@ def test(model, loader, fn_cls_loss, key_target, mllogger, vis_func, prediction_
     error=[]
     for i, data in tqdm(enumerate(loader)):
         data['img']=data['img'].cuda(non_blocking=True).float()
+        labels += [1]
         if key_target in data.keys():
             labels += data[key_target].tolist()
             data[key_target] = data[key_target].cuda(non_blocking=True).float()
@@ -42,27 +44,27 @@ def test(model, loader, fn_cls_loss, key_target, mllogger, vis_func, prediction_
             cls_logit = model(data['img'])
         # if not cls_logit.shape == data[key_target].shape:
         #     cls_logit=cls_logit.reshape(data[key_target].shape)
-        cls_loss = fn_cls_loss(cls_logit, data[key_target])
-        total_loss = cls_loss
-        avg_total_loss += total_loss.detach()*cls_logit.shape[0]
-        avg_cls_loss += cls_loss.detach()*cls_logit.shape[0]
-        num_samples += cls_logit.shape[0]
+        # cls_loss = fn_cls_loss(cls_logit, data[key_target])
+        # total_loss = cls_loss
+        # avg_total_loss += total_loss.detach()*cls_logit.shape[0]
+        # avg_cls_loss += cls_loss.detach()*cls_logit.shape[0]
+        # num_samples += cls_logit.shape[0]
         preds += prediction_parser(cls_logit).tolist()
-        vis_func(data, cls_logit, mllogger,)
+        #vis_func(data, cls_logit, mllogger,)
 
     
 
     
-    avgloss =  (avg_total_loss/num_samples).item()
-    stat_cls_loss =  (avg_cls_loss/num_samples).item()
+    # avgloss =  (avg_total_loss/num_samples).item()
+    # stat_cls_loss =  (avg_cls_loss/num_samples).item()
     precision, recall, f1_score, support = precision_recall_fscore_support(labels, preds, average='macro')
-    mllogger.log_metric('test_loss',avgloss, 0)
-    mllogger.log_metric('test_cls_loss',stat_cls_loss, 0)
+    # mllogger.log_metric('test_loss',avgloss, 0)
+    # mllogger.log_metric('test_cls_loss',stat_cls_loss, 0)
     mllogger.log_metric('test_precision',precision, 0)
     mllogger.log_metric('test_recall',recall, 0)
     mllogger.log_metric('test_f1_score',f1_score, 0)
-    logger.info(f'test-{0} epoch: cls_loss:{stat_cls_loss:.4f}, precision:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f},support:{support}.')
-    #logger.info(f'test-{0} epoch: precision:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f},support:{support}.')
+    #logger.info(f'test-{0} epoch: cls_loss:{stat_cls_loss:.4f}, precision:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f},support:{support}.')
+    logger.info(f'test-{0} epoch: precision:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f},support:{support}.')
 
 
 def parse_args():
@@ -100,10 +102,10 @@ if __name__ == "__main__":
         key_metric = 'rot_id'
         fn_cls_loss = FocalLoss(None,2.0) 
     else:
-        vis_func = visualize_orientation_prediction_outputs
-        prediction_parser = parse_orientation_prediction_outputs
-        key_metric = 'flip'
-        fn_cls_loss = torch.nn.BCEWithLogitsLoss()
+        vis_func = visualize_Character_rotation 
+        prediction_parser = parse_rotation_prediction_outputs 
+        key_metric = 'cls'
+        fn_cls_loss = torch.nn.CrossEntropyLoss() 
 
     test(model, valid_loader, fn_cls_loss, key_metric, mltracker, vis_func, prediction_parser)
        

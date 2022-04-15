@@ -29,6 +29,7 @@ from collections import OrderedDict, Counter
 import random
 from sklearn.metrics import precision_recall_fscore_support
 import pickle
+from sklearn.metrics import classification_report
 logger = logging.getLogger('deskew')
 logger.setLevel(logging.DEBUG)
 stream_handler = logging.StreamHandler()
@@ -51,8 +52,8 @@ def str2bool(v):
 parser = argparse.ArgumentParser(description='CRAFT Text Detection')
 parser.add_argument('--trained_model', default='checkpoints/craft_mlt_25k.pth', type=str, help='pretrained model')
 parser.add_argument('--text_threshold', default=0.8, type=float, help='text confidence threshold')
-parser.add_argument('--low_text', default=0.4, type=float, help='text low-bound score')
-parser.add_argument('--link_threshold', default=0.3, type=float, help='link confidence threshold')
+parser.add_argument('--low_text', default=0.5, type=float, help='text low-bound score')
+parser.add_argument('--link_threshold', default=0.5, type=float, help='link confidence threshold')
 parser.add_argument('--cuda', default=True, type=str2bool, help='Use cuda for inference')
 parser.add_argument('--canvas_size', default=1280, type=int, help='image size for inference')
 parser.add_argument('--mag_ratio', default=1.5, type=float, help='image magnification ratio')
@@ -120,7 +121,7 @@ def test_net(net, image, text_threshold, link_threshold, low_text, cuda, poly, r
 
 def getRotated(img, deg):
     h,w,c = img.shape
-    noise = np.random.uniform(-3, 3)
+    noise = 0#np.random.uniform(-2, 2)
     matrix = cv2.getRotationMatrix2D((w/2, h/2), deg+noise, 1)
     dst = cv2.warpAffine(img, matrix, (w, h),borderValue = (255,255,255))
     return dst
@@ -134,12 +135,10 @@ if __name__ == '__main__':
         if args.run_name:
             cfg['mllogger_cfg']['run_name']=args.run_name
     
-    tr = build_transformer(cfg['transform_cfg'])
-    train_loader, valid_loader = build_dataloader(**cfg['dataset_cfg'], augment_fn=tr)
-
     logger.info('create model')
     stdNet = build_model(**cfg['model_cfg'])
-    stdNet.cuda()
+    stdNet = stdNet.cuda()
+    stdNet.eval()
 
     
     # load CRAFT
@@ -154,13 +153,14 @@ if __name__ == '__main__':
     refine_net = None
     t = time.time()
     # load data
-    data_path =os.getcwd()+'/need_to_be_check_files/*' #'/train_data/valid/*'
+    data_path ='/train_data/valid/*'#os.getcwd()+'/need_to_be_check_files/*' #'/train_data/valid/*'
     img_pathes = glob(data_path, recursive=True)
-    # random.shuffle(img_pathes)
+    random.shuffle(img_pathes)
     gt_degrees = []
     pred_list = []
 
     for k, image_path in enumerate(img_pathes):
+       
         if 1:
             print("Test image {:d}/{:d}: {:s}".format(k+1, len(img_pathes), image_path), end='\r')
             image = imgproc.loadImage(image_path)#image_path)
@@ -169,11 +169,12 @@ if __name__ == '__main__':
                 rotated_image=getRotated(image.copy(), deg)
                 #bboxes, polys, score_text = test_net(net, image, args.text_threshold, args.link_threshold, args.low_text, args.cuda, args.poly, refine_net)
                 bboxes = test_net(net, rotated_image, args.text_threshold, args.link_threshold, args.low_text, args.cuda, args.poly, refine_net)
+                file_utils.saveResult(image_path, rotated_image[:,:,::-1], bboxes, result_folder)
                 patches = file_utils.getCharacterPatchFromImage(rotated_image[:,:,::-1], bboxes, max_num_patch=256)
                 
                 if patches:
                     with torch.no_grad():
-                        patches2tensor = [torch.from_numpy(patch).unsqueeze(0).float() for patch in patches]
+                        patches2tensor = [torch.from_numpy(patch).unsqueeze(0).float()/255.0 for patch in patches]
                         in_img = torch.stack(patches2tensor, dim=0).cuda(non_blocking=True)
                         logits = stdNet(in_img)
                         prob = torch.softmax(logits, -1)
@@ -195,7 +196,14 @@ if __name__ == '__main__':
                             except OSError:
                                 pass
                 else:
-                    gt_degrees.pop()
+                    pred_list.append(4)
+            if (k+1)%100==0:
+                try:
+                    report = classification_report(gt_degrees, pred_list, target_names=['0', '1','2','3'])
+                except ValueError:
+                    report = classification_report(gt_degrees, pred_list, target_names=['0', '1','2','3','4'])
+                with open('4class_low_text_0.5_link_0.5_text_score_0.8_report.txt', 'w') as f:
+                    print(report, file=f)
         else:
             print("Test image {:d}/{:d}: {:s}".format(k+1, len(img_pathes), image_path), end='\r')
             image = imgproc.loadImage(image_path)#image_path)
@@ -220,16 +228,18 @@ if __name__ == '__main__':
                     cv2.imwrite(f'result/{name}', resimg)
                     
     #mltracker = MLLogger(cfg, logger)
-    precision, recall, f1_score, support = precision_recall_fscore_support(gt_degrees, pred_list, average='macro')
-    with open('report.txt', 'w') as f:
-        f.write(f'precidion:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f}\n')
     with open("pred_list.pickle","wb") as fw:
         pickle.dump(pred_list, fw)
     with open("gt_cls_list.pickle","wb") as fw:
         pickle.dump(gt_degrees, fw)
+    try:
+        report = classification_report(gt_degrees, pred_list, target_names=['0', '1','2','3'])
+    except ValueError:
+        report = classification_report(gt_degrees, pred_list, target_names=['0', '1','2','3','4'])
+    with open('4class_low_text_0.5_link_0.5_text_score_0.8_report.txt', 'w') as f:
+        print(report, file=f)
 
     # mltracker.log_metric('valid_precision',precision, 0),
     # mltracker.log_metric('valid_recall',recall, 0)
     # mltracker.log_metric('valid_f1_score',f1_score, 0)
-    logger.info(f' precision:{precision:.4f}, recall:{recall:.4f}, f1_score:{f1_score:.4f},support:{support}.')
     print("elapsed time : {}s".format(time.time() - t))
