@@ -164,11 +164,8 @@ def inference(img)->int:
     
 def parse_args():
     parser = argparse.ArgumentParser(description="handle arguments")
-    parser.add_argument("config", help="path to the configuration file", type=str)
-    parser.add_argument("input_data_dir", help="directory where the image data is.", type=str)
-    parser.add_argument("--run_name", help="run name for mlflow tracking", type=str)
-    
-
+    parser.add_argument("--config", help="path to the configuration file", type=str)
+    parser.add_argument("--input_data_dir", help="directory where the image data is.", type=str)
     args = parser.parse_args()
     return args
 
@@ -178,9 +175,6 @@ if __name__ == "__main__":
     with open(args.config, 'r') as f:
         cfg = json.load(f)
         cfg['config_file'] = args.config
-        if args.run_name:
-            cfg['mllogger_cfg']['run_name'] = args.run_name
-
 
     logger.info('create model')
 

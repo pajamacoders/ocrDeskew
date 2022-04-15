@@ -57,7 +57,7 @@ python3 inference_direction.py --config config/STDirNet_config_valid.json --run_
 ## Serve model
 serve:
 ```bash
-python3 serve_patch_base.py --config config/deskew_and_direction_correction_v2.json --run_name {RUN_NAME_YOU_WANT} --input_data_dir {path/to/image_dir/*}
+python3 serve_patch_base.py --config config/deskew_and_direction_correction_v2.json --input_data_dir {path/to/image_dir}
 ```
 <br/><br/>
 
@@ -103,9 +103,10 @@ path로 설정 후 test.py 의 --config 파라미터 값으로 이 파일을 지
 config file 내의 아래 설정값을 주어진 값으로 바꿀것 <br/>
 
 
-3. [craft_mlt_25k.pth](https://drive.google.com/file/d/1YEYHzt4sD7LVH-HB0mfnrxlcrCmRHDh9/view?usp=sharing) <br/>
+3. Character Detection model
+[craft_mlt_25k.pth](https://drive.google.com/file/d/1YEYHzt4sD7LVH-HB0mfnrxlcrCmRHDh9/view?usp=sharing) <br/>
 pretrained craft model checkpoint <br/><br/>
-모델 입력 이미지 size: 3 x height x width 
+모델 입력 이미지 size: 3 x height x width  <br/>
 
 
 ## serve_patch_base.py 사용 방법
@@ -133,7 +134,7 @@ ex)
 ```
 5. 실행
 ```bash
-python3 serve_patch_base.py --config config/deskew_and_direction_correction_v2.json --run_name {RUN_NAME_YOU_WANT} --input_data_dir path/to/image_dir
+python3 serve_patch_base.py --config config/deskew_and_direction_correction_v2.json --input_data_dir path/to/image_dir
 ```
 
 ## run tracking ui

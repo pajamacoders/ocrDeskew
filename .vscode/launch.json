@@ -73,7 +73,7 @@
             "request": "launch",
             "program": "serve_patch_base.py",
             "console": "integratedTerminal",
-            "args":["config/deskew_and_direction_correction_v2.json", "samples"]
+            "args":["--config", "config/deskew_and_direction_correction_v2.json", "--input_data_dir", "samples"]
         },
         {
             "name": "craft_test",
